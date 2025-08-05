@@ -1,0 +1,90 @@
+# ==============================================================================
+# pyproject.toml: Gold Standard Template for Cornell Course Navigator
+# Last Updated: 2025-07-04
+# This is the definitive, verified source of truth for all Python dependencies.
+# ==============================================================================
+
+[tool.poetry]
+name = "course-navigator"
+version = "0.1.0"
+description = "AI-powered course discovery and knowledge graph for the Cornell curriculum."
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "python"}]
+
+[tool.poetry.dependencies]
+python = "^3.12" # Using Python 3.12 for performance improvements.
+
+# --- LangChain & OpenAI Integration (MODULAR & UP-TO-DATE) ---
+# NOTE: The legacy 'langchain' meta-package is no longer used.
+# This modular approach is the current best practice.
+langchain-core = "^0.2.25"
+langchain-community = "^0.2.19"
+langchain-openai = "^0.1.17"
+openai = "^1.35.13"
+
+# --- AI/ML Core (The Hugging Face & PyTorch Ecosystem) ---
+# Verified compatible with Python 3.12 and NumPy 2.x.
+torch = "^2.4.1"
+transformers = "^4.43.3"
+sentence-transformers = "^3.0.1"
+scikit-learn = "^1.5.1"
+numpy = "^1.26.0" # LangChain compatibility requirement
+
+# --- Data Handling & Validation ---
+pandas = "^2.3.0"
+pydantic = "^2.8.2"
+cachetools = "^5.3.3"  # LRU cache for bounded memory usage
+
+# --- Graph & Vector Databases ---
+networkx = "^3.5"
+neo4j = "^5.22.0" # Updated to latest stable Neo4j 5 driver.
+qdrant-client = "^1.9.2"
+
+# --- Web/API Server ---
+fastapi = "^0.111.1" # Note: FastAPI has LTS versions, this is the latest stable.
+uvicorn = {extras = ["standard"], version = "^0.30.1"}
+
+# --- HTTP Clients & Utilities ---
+requests = "^2.32.3"
+httpx = "^0.27.0"  # OpenAI v1+ depends on this.
+python-dotenv = "^1.0.1"
+tqdm = "^4.66.4"
+tenacity = "^8.5.0"  # For resilient API requests with retries
+
+# --- Visualization ---
+matplotlib = "^3.10.3"
+seaborn = "^0.13.2"
+
+# REMOVED: aiohttp is not a direct dependency of the listed packages.
+# It can be added back if your own code requires it directly.
+# This prevents potential conflicts with dependencies from other libraries (e.g., fastapi's starlette).
+psutil = "^7.0.0"
+
+[tool.poetry.group.dev.dependencies]
+# --- Testing & Code Quality ---
+pytest = "^8.3.2"
+pytest-asyncio = "^1.0.0"
+black = "^24.4.2" # Using a stable, widely-adopted style.
+ruff = "^0.5.5"
+mypy = "^1.11.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# --- Configuration for Code Quality Tools ---
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+[tool.ruff]
+select = ["E", "W", "F", "I", "B", "C4", "UP", "A", "T20"]
+ignore = ["E501"]
+line-length = 88
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true

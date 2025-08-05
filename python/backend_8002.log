@@ -1,0 +1,155 @@
+INFO:     Will watch for changes in these directories: ['/mnt/c/dev/CourseNavigator/python']
+INFO:     Uvicorn running on http://127.0.0.1:8002 (Press CTRL+C to quit)
+INFO:     Started reloader process [25894] using WatchFiles
+INFO:     Started server process [25942]
+INFO:     Waiting for application startup.
+INFO:gateway.main:Initializing Cornell Course Navigator Gateway...
+WARNING:gateway.services.vector_service:OpenAI not available, embeddings will be mocked
+WARNING:gateway.services.rag_service:OpenAI not available, responses will be mocked
+INFO:gateway.services.vector_service:Vector service in mock mode
+ERROR:gateway.services.graph_service:Neo4j health check failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+WARNING:gateway.main:Service health checks failed, running in mock mode: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:gateway.main:Creating GDS graph projections for production stability...
+INFO:gateway.main:All GDS graph projections ready - eliminating per-request overhead
+INFO:gateway.main:All services initialized successfully
+INFO:     Application startup complete.
+INFO:gateway.main:Processing graph subgraph request: max_nodes=5, max_edges=100
+INFO:gateway.services.graph_algorithms_service:Computing graph subgraph: max_nodes=5, max_edges=100
+INFO:gateway.services.graph_algorithms_service:Computing course centrality analysis
+INFO:graph_analysis.centrality:Starting complete centrality analysis with top_n=10
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Failed to ensure graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Complete centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:gateway.services.graph_algorithms_service:Computing community analysis using louvain
+INFO:graph_analysis.communities:Starting complete community analysis with louvain algorithm
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.communities:Failed to ensure similarity graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.communities:Complete community analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Community analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+WARNING:gateway.services.graph_algorithms_service:Failed to get prerequisite relationships: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:gateway.services.graph_algorithms_service:Cached result for subgraph_filter_by_subject=_include_centrality=True_include_communities=True_max_edges=100_max_nodes=5
+INFO:gateway.services.graph_algorithms_service:Graph subgraph computation completed in 197ms: 0 nodes, 0 edges
+INFO:     127.0.0.1:51956 - "POST /api/graph/subgraph HTTP/1.1" 200 OK
+INFO:gateway.main:Processing centrality request: top_n=3
+INFO:gateway.services.graph_algorithms_service:Computing course centrality analysis
+INFO:graph_analysis.centrality:Starting complete centrality analysis with top_n=3
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Failed to ensure graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Complete centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:     127.0.0.1:58216 - "POST /api/centrality HTTP/1.1" 200 OK
+INFO:gateway.main:Processing graph subgraph request: max_nodes=50, max_edges=100
+INFO:gateway.services.graph_algorithms_service:Computing graph subgraph: max_nodes=50, max_edges=100
+INFO:gateway.services.graph_algorithms_service:Computing course centrality analysis
+INFO:graph_analysis.centrality:Starting complete centrality analysis with top_n=100
+INFO:gateway.main:Processing centrality request: top_n=15
+INFO:gateway.services.graph_algorithms_service:Computing course centrality analysis
+INFO:graph_analysis.centrality:Starting complete centrality analysis with top_n=15
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Failed to ensure graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Complete centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:gateway.services.graph_algorithms_service:Computing community analysis using louvain
+INFO:graph_analysis.communities:Starting complete community analysis with louvain algorithm
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Failed to ensure graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Complete centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:     127.0.0.1:49090 - "POST /api/centrality HTTP/1.1" 200 OK
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.communities:Failed to ensure similarity graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.communities:Complete community analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Community analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+WARNING:gateway.services.graph_algorithms_service:Failed to get prerequisite relationships: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:gateway.services.graph_algorithms_service:Cached result for subgraph_filter_by_subject=_include_centrality=True_include_communities=True_max_edges=100_max_nodes=50
+INFO:gateway.services.graph_algorithms_service:Graph subgraph computation completed in 147ms: 0 nodes, 0 edges
+INFO:     127.0.0.1:49082 - "POST /api/graph/subgraph HTTP/1.1" 200 OK
+INFO:gateway.main:Processing centrality request: top_n=15
+INFO:gateway.services.graph_algorithms_service:Computing course centrality analysis
+INFO:graph_analysis.centrality:Starting complete centrality analysis with top_n=15
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Failed to ensure graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Complete centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:     127.0.0.1:57944 - "POST /api/centrality HTTP/1.1" 200 OK
+INFO:gateway.main:Processing centrality request: top_n=15
+INFO:gateway.services.graph_algorithms_service:Computing course centrality analysis
+INFO:graph_analysis.centrality:Starting complete centrality analysis with top_n=15
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Failed to ensure graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Complete centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:     127.0.0.1:34468 - "POST /api/centrality HTTP/1.1" 200 OK
+INFO:gateway.main:Processing centrality request: top_n=15
+INFO:gateway.services.graph_algorithms_service:Computing course centrality analysis
+INFO:graph_analysis.centrality:Starting complete centrality analysis with top_n=15
+ERROR:gateway.services.graph_service:Query execution failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Failed to ensure graph exists: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:graph_analysis.centrality:Complete centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+ERROR:gateway.services.graph_algorithms_service:Centrality analysis failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:     127.0.0.1:34468 - "POST /api/centrality HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'gateway/services/graph_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:gateway.main:Shutting down Cornell Course Navigator Gateway...
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25942]
+INFO:     Started server process [26438]
+INFO:     Waiting for application startup.
+INFO:gateway.main:Initializing Cornell Course Navigator Gateway...
+WARNING:gateway.services.vector_service:OpenAI not available, embeddings will be mocked
+WARNING:gateway.services.rag_service:OpenAI not available, responses will be mocked
+INFO:gateway.services.vector_service:Vector service in mock mode
+ERROR:gateway.services.graph_service:Neo4j health check failed: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+WARNING:gateway.main:Service health checks failed, running in mock mode: Couldn't connect to localhost:7687 (resolved to ('127.0.0.1:7687',)):
+Failed to establish connection to ResolvedIPv4Address(('127.0.0.1', 7687)) (reason [Errno 111] Connect call failed ('127.0.0.1', 7687))
+INFO:gateway.main:Creating GDS graph projections for production stability...
+INFO:gateway.main:All GDS graph projections ready - eliminating per-request overhead
+INFO:gateway.main:All services initialized successfully
+INFO:     Application startup complete.

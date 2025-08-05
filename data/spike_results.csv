@@ -1,0 +1,101 @@
+course_id,course_title,prereq_text,success,courses_found,confidence,primary_matches,range_matches,letter_matches
+FA14-CS-1110-1,Introduction to Computing Using Python,Assumes basic high school mathematics (no calculus) but no programming experience.,False,,0.0,0,0,0
+FA14-CS-1112-1,Introduction to Computing Using MATLAB,"Corequisite: MATH 1110, MATH 1910, or equivalent. Assumes student is comfortable with mathematics (at level of one semester of calculus) but has no prior programming experience.",True,MATH 1110; MATH 1910,0.10000000000000012,2,0,0
+FA14-CS-1132-1,Transition to MATLAB,Prerequisite: one course in programming.,False,,0.0,0,0,0
+FA14-CS-1142-1,Introduction to MATLAB,"Corequisite: MATH 1110, MATH 1910, or equivalent.  No programming experience assumed.",True,MATH 1110; MATH 1910,0.3000000000000001,2,0,0
+FA14-CS-1610-1,Computing in the Arts,Recommended prerequisite: good comfort level with computers and some of the arts.,False,,0.0,0,0,0
+FA14-CS-2024-1,C++ Programming,Prerequisite: one programming course or equivalent programming experience. Students who plan to take CS 2022 and 2024 must take CS 2022 first.,True,CS 2022; CS 2022,0.2000000000000001,2,0,0
+FA14-CS-2048-1,Introduction to iPhone App Development,Prerequisites: CS 2110 or CS 2112.,True,CS 2110; CS 2112,0.6000000000000001,2,0,0
+FA14-CS-2110-1,Object-Oriented Programming and Data Structures,Prerequisite: CS 1110    or CS 1130 or CS 1112 (taken Fall 2012 or later) or CS 1114 (taken Fall 2012 or later) or CS 1115 or equivalent course on object-oriented programming.,True,CS 1110; CS 1130; CS 1112; CS 1114; CS 1115,0.10000000000000012,5,0,0
+FA14-CS-2111-1,Programming Practicum,Corequisite: CS 2110.,True,CS 2110,0.7000000000000001,1,0,0
+FA14-CS-2112-1,Object-Oriented Design and Data Structures - Honors,"Prerequisite: very good performance in CS 1110 or CS 1130 or equivalent course in Java or C++, or permission of the instructor.",True,CS 1110; CS 1130,0.2000000000000001,2,0,0
+FA14-CS-2800-1,Discrete Structures,Prerequisite or corequisite: one programming course or permission of instructor.,False,,0.0,0,0,0
+FA14-CS-3110-1,Data Structures and Functional Programming,Prerequisite: CS 2110 or equivalent programming experience. Prerequisite or corequisite: CS 2800. Should not be taken concurrently with CS 3410 or CS 3420.,True,CS 2110; CS 2800; CS 3410; CS 3420,0.2000000000000001,4,0,0
+FA14-CS-4110-1,Programming Languages and Logics,Prerequisite: CS 3110 or permission of instructor.,True,CS 3110,0.3000000000000001,1,0,0
+FA14-CS-4154-1,Analytics-driven Game Design,Prerequisites for programmers: CS 2110 (or permission of the instructor). Prerequisites for designers: INFO 2450 and/or submission of art/design portfolio to instructor.,True,CS 2110; INFO 2450,0.10000000000000012,2,0,0
+FA14-CS-4210-2,Numerical Analysis and Differential Equations,"Prerequisites: MATH 2210 or MATH 2940 or equivalent, one additional mathematics course numbered 3000 or above, and knowledge of programming.",True,MATH 2210; MATH 2940,0.2000000000000001,2,0,0
+FA14-CS-4300-2,Information Retrieval,Prerequisite: INFO 2950 and INFO 3300 (or a machine learning course).,True,INFO 2950; INFO 3300,0.5000000000000001,2,0,0
+FA14-CS-4320-1,Introduction to Database Systems,Prerequisites: CS 2110 or CS 2800 and permission of instructor.,True,CS 2110; CS 2800,0.3000000000000001,2,0,0
+FA14-CS-4321-1,Practicum in Database Systems,Prerequisite or corequisite: CS 4320.,True,CS 4320,0.6000000000000001,1,0,0
+FA14-CS-4410-1,Operating Systems,Prerequisite: CS 3410 or CS 3420.,True,CS 3410; CS 3420,0.6000000000000001,2,0,0
+FA14-CS-4411-1,Practicum in Operating Systems,Corequisite: CS 4410.,True,CS 4410,0.7000000000000001,1,0,0
+FA14-CS-4420-2,Computer Architecture,Prerequisites: CS 3420/ECE 3140 or CS 3410.,True,CS 3420; ECE 3140; CS 3410,0.6000000000000001,3,0,0
+FA14-CS-4620-1,Introduction to Computer Graphics,Prerequisite: CS 2110/ENGRD 2110.,True,CS 2110; ENGRD 2110,0.8,2,0,0
+FA14-CS-4621-1,Computer Graphics Practicum,Prerequisite or corequisite: CS 4620.,True,CS 4620,0.6000000000000001,1,0,0
+FA14-CS-4700-1,Foundations of Artificial Intelligence,Prerequisites: CS 2110/ENGRD 2110 and CS 2800 or equivalent.,True,CS 2110; ENGRD 2110; CS 2800,0.3000000000000001,3,0,0
+FA14-CS-4701-1,Practicum in Artificial Intelligence,Prerequisite or corequisite: CS 4700.,True,CS 4700,0.6000000000000001,1,0,0
+FA14-CS-4744-3,Computational Linguistics,"Prerequisite: CS 2800  or LING 3302  or LING 3303, or permission of instructor.",True,CS 2800; LING 3302; LING 3303,0.3000000000000001,3,0,0
+FA14-CS-4780-1,Machine Learning,"Prerequisite:  CS 2110/ENGRD 2110  or CS 2112/ENGRD 2112  and CS 2800, or basic probability theory, and basic knowledge of linear algebra.",True,CS 2110; ENGRD 2110; CS 2112; ENGRD 2112; CS 2800,0.5000000000000001,5,0,0
+FA14-CS-5110-1,Programming Languages and Logics,Prerequisite: CS 3110 or permission of instructor.,True,CS 3110,0.3000000000000001,1,0,0
+FA14-CS-5150-1,Software Engineering,Prerequisite: CS 2110 or equivalent experience programming in Java or C++.,True,CS 2110,0.3000000000000001,1,0,0
+FA14-CS-5320-1,Introduction to Database Systems,Prequisites:  CS 2110 or CS 2800 and permission of instructor.,True,CS 2110; CS 2800,0.3000000000000001,2,0,0
+FA14-CS-5321-1,Practicum in Database Systems,Prerequisite or corequisite: CS 5320.,True,CS 5320,0.6000000000000001,1,0,0
+FA14-CS-5356-1,Building Startup Systems,Prerequisite: CS 2110 or CS 2112.,True,CS 2110; CS 2112,0.6000000000000001,2,0,0
+FA14-CS-5413-1,High Performance Systems and Networking,"Prerequisites: CS 4410 and CS 4411, or equivalent.",True,CS 4410; CS 4411,0.3000000000000001,2,0,0
+FA14-CS-5420-2,Advanced Computer Architecture,Prerequisite: ECE 4750 or CS 4420.,True,ECE 4750; CS 4420,0.6000000000000001,2,0,0
+FA14-CS-5434-1,Defending Computer Networks,"Prerequisite: CS 2022 or equivalent, CS 3410 or equivalent, CS 4410 or equivalent.",True,CS 2022; CS 3410; CS 4410,0.3000000000000001,3,0,0
+FA14-CS-5435-1,Security and Privacy Concepts in the Wild,Prerequisite: CS 2800 or CS 4820 or permission of instructor.,True,CS 2800; CS 4820,0.3000000000000001,2,0,0
+FA14-CS-5454-1,Mobile and Ubiquitous Computing,Prerequisite: CS 4410 or permission of instructor.,True,CS 4410,0.3000000000000001,1,0,0
+FA14-CS-5620-1,Introduction to Computer Graphics,Prequisites: CS 2110.,True,CS 2110,0.9,1,0,0
+FA14-CS-5621-1,Computer Graphics Practicum,Prerequisite or corequisite: CS 5620.,True,CS 5620,0.6000000000000001,1,0,0
+FA14-CS-5660-1,Signal Processing,"Prerequisite: Some familiarity with linear algebra and statistics (at the level taught in a freshman course), or permission of instructor.",False,,0.0,0,0,0
+FA14-CS-5722-3,Heuristic Methods for Optimization,"Prerequisites: CS 2110/ENGRD 2110; CEE 3200/ENGRD 3200, or graduate standing, or permission of instructor.",True,CS 2110; ENGRD 2110; CEE 3200; ENGRD 3200,0.2000000000000001,4,0,0
+FA14-CS-5724-1,Evolutionary Computation,Prerequisite: CS 2110/ENGRD 2110.,True,CS 2110; ENGRD 2110,0.8,2,0,0
+FA14-CS-5780-1,Machine Learning,"Prequisite: CS 2110/ENGRD 2110 or CS 2112/CS 2112 and CS 2800, or basic probability theory, and basic knowledge of linear algebra.",True,CS 2110; ENGRD 2110; CS 2112; CS 2112; CS 2800,0.5000000000000001,5,0,0
+FA14-CS-5785-1,Modern Analytics,"Prerequisites: CS 2800 or the equivalent plus basic familiarity with Matlab or Python, or permission of the instructor.",True,CS 2800,0.2000000000000001,1,0,0
+FA14-CS-5860-1,Introduction to Formal Methods,Prerequisites: CS 2110 or CS 3110 or equivalent and CS 2800 or equivalent.,True,CS 2110; CS 3110; CS 2800,0.3000000000000001,3,0,0
+FA14-CS-6117-1,Category Theory for Computer Scientists,Prerequisite: CS 3110.,True,CS 3110,0.9,1,0,0
+FA14-CS-6410-1,Advanced Systems,Prerequisite: CS 4410 or permission of instructor.,True,CS 4410,0.3000000000000001,1,0,0
+FA14-CS-6644-1,Modeling the World,"Prerequisites: CS 4620/CS 5620 or CS 4670/CS 5670, or equivalent course and permission of instructor.",True,CS 4620; CS 5620; CS 4670; CS 5670,0.2000000000000001,4,0,0
+FA14-CS-6742-1,Natural Language Processing and Social Interaction,"Prerequisites: CS 2110 or equivalent programming experience, a course in artificial intelligence or any relevant subfield (e.g., NLP, information retrieval, machine learning).",True,CS 2110,0.10000000000000012,1,0,0
+FA14-CS-6751-1,Introduction to Robotic Mobile Manipulation,"Prerequisites: Graduate standing or a previous robotics course such as MAE 4180 or CS 4758. A background in mathematics is required, especially linear algebra and probability. A strong programming ability in C++ or Python is required.",True,MAE 4180; CS 4758,0.5000000000000001,2,0,0
+FA14-CS-6783-1,Machine Learning Theory,"Prerequisites: CS 4780/CS 5780 or CS 4786/CS 5786 or CS 6780 or equivalent, or permission of instructor.",True,CS 4780; CS 5780; CS 4786; CS 5786; CS 6780,0.2000000000000001,5,0,0
+FA14-CS-6820-1,Analysis of Algorithms,Prerequisite: CS 4820 or graduate standing.,True,CS 4820,0.6000000000000001,1,0,0
+FA14-CS-6830-1,Cryptography,"Prerequisites: General ease with algorithms and elementary probability theory, maturity with mathematical proofs (ability to read and write mathematical proofs).",False,,0.0,0,0,0
+FA14-CS-7190-1,Seminar in Programming Languages,Prerequisite: CS 6110 or permission of instructor.,True,CS 6110,0.3000000000000001,1,0,0
+FA14-ENGRD-2020-1,Statics and Mechanics of Solids,Prerequisite: PHYS 1112. Corequisite: MATH 1920 or permission of instructor.,True,PHYS 1112; MATH 1920,0.3000000000000001,2,0,0
+FA14-ENGRD-2100-1,Introduction to Circuits for Electrical and Computer Engineers,Corequisites: MATH 2930 and PHYS 2213.,True,MATH 2930; PHYS 2213,0.6000000000000001,2,0,0
+FA14-ENGRD-2110-2,Object-Oriented Programming and Data Structures,Prerequisite: CS 1110 or CS 1130 or equivalent course in Java or C++.,True,CS 1110; CS 1130,0.3000000000000001,2,0,0
+FA14-ENGRD-2112-2,Object-Oriented Design and Data Structures - Honors,"Prerequisite: CS 1110 or CS 1130 or equivalent course in Java or C++, or permission of the instructor. ",True,CS 1110; CS 1130,0.2000000000000001,2,0,0
+FA14-ENGRD-2210-1,Thermodynamics,"Prerequisite: MATH 1920, PHYS 1112.",True,MATH 1920; PHYS 1112,0.8,2,0,0
+FA14-ENGRD-2300-1,Digital Logic and Computer Organization,Prerequisite: CS 1110 or CS 1112.,True,CS 1110; CS 1112,0.6000000000000001,2,0,0
+FA14-ENGRD-2510-2,Engineering for a Sustainable Society,"Prerequisite: CHEM 2070, CHEM 2090 or AP Chem. Pre or corequisite: MATH 2930.",True,CHEM 2070; CHEM 2090; MATH 2930,0.6000000000000001,3,0,0
+FA14-ENGRD-2600-2,Principles of Biological Engineering,"Prerequisite or corequisite: MATH 2930, two semesters of core biology major classes and the investigative lab or BIOG 1445.",True,MATH 2930; BIOG 1445,0.5000000000000001,2,0,0
+FA14-ENGRD-2610-2,Mechanical Properties of Materials: From Nanodevices to Superstructures,Prerequisite: MATH 1910. Corequisite: PHYS 1112 or permission of instructor.,True,MATH 1910; PHYS 1112,0.3000000000000001,2,0,0
+FA14-ENGRD-2640-2,Interfacing the Digital Domain with an Analog World,Prerequisite: CS 1112.,True,CS 1112,0.9,1,0,0
+FA14-ENGRD-2700-1,Basic Engineering Probability and Statistics,Prerequisite: MATH 1910 and MATH 1920. Prerequisite or corequisite: MATH 2940.,True,MATH 1910; MATH 1920; MATH 2940,0.6000000000000001,3,0,0
+FA14-ENGRD-3100-2,Introduction to Probability and Inference for Random Signals and Systems,"Prerequisite: MATH 2940, PHYS 2213, or equivalents.",True,MATH 2940; PHYS 2213,0.3000000000000001,2,0,0
+FA14-HIST-4001-1,Honors Guidance,Prerequisite: HIST 4000.,True,HIST 4000,0.9,1,0,0
+FA14-MATH-1105-1,Finite Mathematics for the Life and Social Sciences,"Prerequisite: three years of high school mathematics, including trigonometry and logarithms, or knowledge of topics in MATH 1102.",True,MATH 1102,0.5000000000000001,1,0,0
+FA14-MATH-1110-1,Calculus I,"Prerequisite: three years of high school mathematics (including trigonometry and logarithms) or a precalculus course (e.g., MATH 1101).",True,MATH 1101,0.40000000000000013,1,0,0
+FA14-MATH-1120-1,Calculus II,"Prerequisite: MATH 1110 with a grade of C or better, excellent performance in MATH 1106, or equivalent AP credit.",True,MATH 1110; MATH 1106,0.2000000000000001,2,0,0
+FA14-MATH-1220-1,Honors Calculus II,"Prerequisite: one semester of calculus with high performance, equivalent AP credit, or permission of department.",False,,0.0,0,0,0
+FA14-MATH-1710-1,Statistical Theory and Application in the Real World,Prerequisite: high school mathematics. No previous familiarity with computers presumed.,False,,0.0,0,0,0
+FA14-MATH-1910-1,Calculus for Engineers,"Prerequisite: three years high school mathematics, including trigonometry and logarithms, and at least one course in differential and integral calculus.",False,,0.0,0,0,0
+FA14-MATH-1920-1,Multivariable Calculus for Engineers,Prerequisite: MATH 1910 or equivalent AP credit.,True,MATH 1910,0.3000000000000001,1,0,0
+FA14-MATH-2210-1,Linear Algebra,"Prerequisite: two semesters of calculus with high performance, equivalent AP credit, or permission of department.",False,,0.0,0,0,0
+FA14-MATH-2220-1,Multivariable Calculus,Prerequisite: MATH 2210.,True,MATH 2210,0.9,1,0,0
+FA14-MATH-2230-1,Theoretical Linear Algebra and Calculus,"Prerequisite: two semesters of calculus with a grade of A- or better, equivalent AP credit, or permission of instructor.",False,,0.0,0,0,0
+FA14-MATH-2310-1,Linear Algebra with Applications,Prerequisite: MATH 1110 or equivalent AP credit.,True,MATH 1110,0.3000000000000001,1,0,0
+FA14-MATH-2930-1,Differential Equations for Engineers,Prerequisite: MATH 1920.,True,MATH 1920,0.9,1,0,0
+FA14-MATH-2940-1,Linear Algebra for Engineers,Prerequisite: MATH 1920.,True,MATH 1920,0.9,1,0,0
+FA14-MATH-3110-1,Introduction to Analysis,"Prerequisites: MATH 2210-MATH 2220, MATH 2230-MATH 2240, or MATH 1920 and MATH 2940.",True,MATH 2210; MATH 2220; MATH 2230; MATH 2240; MATH 1920; MATH 2940,0.6000000000000001,6,0,0
+FA14-MATH-3210-1,Manifolds and Differential Forms,"Prerequisites: multivariable calculus and linear algebra (e.g., MATH 2210-MATH 2220, MATH 2230-MATH 2240, or MATH 1920 and MATH 2940).",True,MATH 2210; MATH 2220; MATH 2230; MATH 2240; MATH 1920; MATH 2940,0.40000000000000013,6,0,0
+FA14-MATH-3230-1,Introduction to Differential Equations,"Prerequisites: multivariable calculus and linear algebra (e.g., MATH 2210-MATH 2220, MATH 2230-MATH 2240, or MATH 1920 and MATH 2940), or permission of instructor.",True,MATH 2210; MATH 2220; MATH 2230; MATH 2240; MATH 1920; MATH 2940,0.10000000000000012,6,0,0
+FA14-MATH-3320-1,Introduction to Number Theory,"Prerequisite: MATH 2210, MATH 2230, MATH 2310, or MATH 2940.",True,MATH 2210; MATH 2230; MATH 2310; MATH 2940,0.6000000000000001,4,0,0
+FA14-MATH-3560-1,Groups and Geometry,"Prerequisite: MATH 2210, MATH 2230, MATH 2310, or MATH 2940. Prior knowledge of group theory is not a prerequisite.",True,MATH 2210; MATH 2230; MATH 2310; MATH 2940,0.5000000000000001,4,0,0
+FA14-MATH-4130-1,Honors Introduction to Analysis I,"Prerequisite: high level of performance in MATH 2210-MATH 2220, MATH 2230-MATH 2240, or MATH 1920 and MATH 2940 and familiarity with proofs.",True,MATH 2210; MATH 2220; MATH 2230; MATH 2240; MATH 1920; MATH 2940,0.5000000000000001,6,0,0
+FA14-MATH-4180-1,Complex Analysis,"Prerequisite: MATH 2230-MATH 2240, MATH 3110, or MATH 4130 or permission of instructor.",True,MATH 2230; MATH 2240; MATH 3110; MATH 4130,0.3000000000000001,4,0,0
+FA14-MATH-4200-1,Differential Equations and Dynamical Systems,"Prerequisite: high level of performance in MATH 2210-MATH 2220, MATH 2230-MATH 2240, MATH 1920 and MATH 2940, or permission of instructor.",True,MATH 2210; MATH 2220; MATH 2230; MATH 2240; MATH 1920; MATH 2940,0.2000000000000001,6,0,0
+FA14-MATH-4250-1,Numerical Analysis and Differential Equations,"Prerequisite: MATH 2210 or MATH 2940 or equivalent, one additional mathematics course numbered 3000 or above, and knowledge of programming.",True,MATH 2210; MATH 2940,0.2000000000000001,2,0,0
+FA14-MATH-4310-1,Linear Algebra,"Prerequisite: MATH 2210, MATH 2230, MATH 2310, or MATH 2940.",True,MATH 2210; MATH 2230; MATH 2310; MATH 2940,0.6000000000000001,4,0,0
+FA14-MATH-4330-1,Honors Linear Algebra,"Prerequisite: high level of performance in MATH 2210, MATH 2230, MATH 2310, or MATH 2940.",True,MATH 2210; MATH 2230; MATH 2310; MATH 2940,0.6000000000000001,4,0,0
+FA14-MATH-4410-1,Introduction to Combinatorics I,"Prerequisite: MATH 2210, MATH 2230, MATH 2310, or MATH 2940.",True,MATH 2210; MATH 2230; MATH 2310; MATH 2940,0.6000000000000001,4,0,0
+FA14-MATH-4530-1,Introduction to Topology,"Prerequisite: MATH 2210, MATH 2230, MATH 2310, or MATH 2940, plus at least one mathematics course numbered 3000 or above, or permission of instructor.",True,MATH 2210; MATH 2230; MATH 2310; MATH 2940,0.2000000000000001,4,0,0
+FA14-MATH-4710-1,Basic Probability,Prerequisite: one year of calculus. Recommended prerequisite: some knowledge of multivariate calculus.,False,,0.0,0,0,0
+FA14-MATH-4810-1,Mathematical Logic,"Prerequisite: MATH 2220 or MATH 2230 and preferably some additional course involving proofs in mathematics, computer science, or philosophy.",True,MATH 2220; MATH 2230,0.5000000000000001,2,0,0
+FA14-MATH-6310-1,Algebra,Prerequisite: familiarity with material covered in a standard undergraduate course in abstract algebra.,False,,0.0,0,0,0
+FA14-MATH-6520-1,Differentiable Manifolds I,"Prerequisites: advanced calculus, linear algebra (MATH 4310), point-set topology (MATH 4530).",True,MATH 4310; MATH 4530,0.7000000000000001,2,0,0
+FA14-MATH-6710-1,Probability Theory I,"Prerequisite: knowledge of Lebesgue integration theory, at least on real line. Students can learn this material by taking parts of MATH 4130-MATH 4140 or MATH 6210.",True,MATH 4130; MATH 4140; MATH 6210,0.5000000000000001,3,0,0
+FA14-MATH-6730-2,Mathematical Statistics I,"Prerequisite: Undergraduate real analysis and probability (MATH 3110, MATH 4710).",True,MATH 3110; MATH 4710,0.5000000000000001,2,0,0
+FA14-MATH-7740-1,Statistical Learning Theory,Prerequisite: basic mathematical statistics (MATH 6740 or equivalent) and measure theoretic probability (MATH 6710).,True,MATH 6740; MATH 6710,0.10000000000000012,2,0,0

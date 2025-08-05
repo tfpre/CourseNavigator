@@ -1,0 +1,2 @@
+# CourseNavigator
+Cornell Course Navigator

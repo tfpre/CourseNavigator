@@ -1,0 +1,1649 @@
+{
+  "CourseInfo": {
+    "description": "Course information returned in search results",
+    "properties": {
+      "id": {
+        "title": "Id",
+        "type": "string"
+      },
+      "subject": {
+        "title": "Subject",
+        "type": "string"
+      },
+      "catalog_nbr": {
+        "title": "Catalog Nbr",
+        "type": "string"
+      },
+      "title": {
+        "title": "Title",
+        "type": "string"
+      },
+      "description": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Description"
+      },
+      "credits": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Credits"
+      },
+      "similarity_score": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Similarity Score"
+      },
+      "graph_relevance": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Graph Relevance"
+      }
+    },
+    "required": [
+      "id",
+      "subject",
+      "catalog_nbr",
+      "title"
+    ],
+    "title": "CourseInfo",
+    "type": "object"
+  },
+  "PrerequisiteEdge": {
+    "description": "Graph edge representing a prerequisite relationship",
+    "properties": {
+      "from_course_id": {
+        "title": "From Course Id",
+        "type": "string"
+      },
+      "to_course_id": {
+        "title": "To Course Id",
+        "type": "string"
+      },
+      "type": {
+        "title": "Type",
+        "type": "string"
+      },
+      "confidence": {
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Confidence",
+        "type": "number"
+      }
+    },
+    "required": [
+      "from_course_id",
+      "to_course_id",
+      "type",
+      "confidence"
+    ],
+    "title": "PrerequisiteEdge",
+    "type": "object"
+  },
+  "GraphContext": {
+    "$defs": {
+      "CourseInfo": {
+        "description": "Course information returned in search results",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "catalog_nbr": {
+            "title": "Catalog Nbr",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "credits": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Credits"
+          },
+          "similarity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Similarity Score"
+          },
+          "graph_relevance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Graph Relevance"
+          }
+        },
+        "required": [
+          "id",
+          "subject",
+          "catalog_nbr",
+          "title"
+        ],
+        "title": "CourseInfo",
+        "type": "object"
+      },
+      "PrerequisiteEdge": {
+        "description": "Graph edge representing a prerequisite relationship",
+        "properties": {
+          "from_course_id": {
+            "title": "From Course Id",
+            "type": "string"
+          },
+          "to_course_id": {
+            "title": "To Course Id",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          }
+        },
+        "required": [
+          "from_course_id",
+          "to_course_id",
+          "type",
+          "confidence"
+        ],
+        "title": "PrerequisiteEdge",
+        "type": "object"
+      }
+    },
+    "description": "Graph context for a set of courses",
+    "properties": {
+      "nodes": {
+        "items": {
+          "$ref": "#/$defs/CourseInfo"
+        },
+        "title": "Nodes",
+        "type": "array"
+      },
+      "edges": {
+        "items": {
+          "$ref": "#/$defs/PrerequisiteEdge"
+        },
+        "title": "Edges",
+        "type": "array"
+      },
+      "centrality_scores": {
+        "anyOf": [
+          {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Centrality Scores"
+      }
+    },
+    "required": [
+      "nodes",
+      "edges"
+    ],
+    "title": "GraphContext",
+    "type": "object"
+  },
+  "RAGRequest": {
+    "$defs": {
+      "SearchMode": {
+        "description": "Search mode for different types of queries",
+        "enum": [
+          "semantic",
+          "graph_aware",
+          "prereq_path"
+        ],
+        "title": "SearchMode",
+        "type": "string"
+      }
+    },
+    "description": "Request for RAG with graph context",
+    "example": {
+      "include_graph_context": true,
+      "max_prerequisite_depth": 3,
+      "mode": "graph_aware",
+      "query": "machine learning courses with programming prerequisites",
+      "top_k": 10
+    },
+    "properties": {
+      "query": {
+        "maxLength": 500,
+        "minLength": 1,
+        "title": "Query",
+        "type": "string"
+      },
+      "mode": {
+        "$ref": "#/$defs/SearchMode",
+        "default": "graph_aware"
+      },
+      "top_k": {
+        "default": 10,
+        "maximum": 50,
+        "minimum": 1,
+        "title": "Top K",
+        "type": "integer"
+      },
+      "include_graph_context": {
+        "default": true,
+        "title": "Include Graph Context",
+        "type": "boolean"
+      },
+      "max_prerequisite_depth": {
+        "default": 3,
+        "maximum": 10,
+        "minimum": 1,
+        "title": "Max Prerequisite Depth",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "title": "RAGRequest",
+    "type": "object"
+  },
+  "PrerequisitePathRequest": {
+    "description": "Request for prerequisite path for a specific course",
+    "example": {
+      "course_id": "FA14-CS-4780-1",
+      "include_recommendations": true,
+      "max_depth": 5
+    },
+    "properties": {
+      "course_id": {
+        "minLength": 1,
+        "title": "Course Id",
+        "type": "string"
+      },
+      "include_recommendations": {
+        "default": true,
+        "title": "Include Recommendations",
+        "type": "boolean"
+      },
+      "max_depth": {
+        "default": 5,
+        "maximum": 10,
+        "minimum": 1,
+        "title": "Max Depth",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "course_id"
+    ],
+    "title": "PrerequisitePathRequest",
+    "type": "object"
+  },
+  "ErrorDetail": {
+    "description": "Error detail for API responses",
+    "properties": {
+      "code": {
+        "title": "Code",
+        "type": "string"
+      },
+      "message": {
+        "title": "Message",
+        "type": "string"
+      },
+      "details": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Details"
+      }
+    },
+    "required": [
+      "code",
+      "message"
+    ],
+    "title": "ErrorDetail",
+    "type": "object"
+  },
+  "RAGResponse": {
+    "$defs": {
+      "CourseInfo": {
+        "description": "Course information returned in search results",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "catalog_nbr": {
+            "title": "Catalog Nbr",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "credits": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Credits"
+          },
+          "similarity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Similarity Score"
+          },
+          "graph_relevance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Graph Relevance"
+          }
+        },
+        "required": [
+          "id",
+          "subject",
+          "catalog_nbr",
+          "title"
+        ],
+        "title": "CourseInfo",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "GraphContext": {
+        "description": "Graph context for a set of courses",
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/$defs/CourseInfo"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/$defs/PrerequisiteEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "centrality_scores": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Centrality Scores"
+          }
+        },
+        "required": [
+          "nodes",
+          "edges"
+        ],
+        "title": "GraphContext",
+        "type": "object"
+      },
+      "PrerequisiteEdge": {
+        "description": "Graph edge representing a prerequisite relationship",
+        "properties": {
+          "from_course_id": {
+            "title": "From Course Id",
+            "type": "string"
+          },
+          "to_course_id": {
+            "title": "To Course Id",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          }
+        },
+        "required": [
+          "from_course_id",
+          "to_course_id",
+          "type",
+          "confidence"
+        ],
+        "title": "PrerequisiteEdge",
+        "type": "object"
+      }
+    },
+    "description": "Response from RAG with graph endpoint",
+    "example": {
+      "answer": "Based on your query about machine learning courses...",
+      "courses": [
+        {
+          "catalog_nbr": "4780",
+          "graph_relevance": 0.85,
+          "id": "FA14-CS-4780-1",
+          "similarity_score": 0.92,
+          "subject": "CS",
+          "title": "Machine Learning for Intelligent Systems"
+        }
+      ],
+      "graph_context": {
+        "edges": [],
+        "nodes": []
+      },
+      "query_metadata": {
+        "graph_query_time_ms": 123,
+        "total_time_ms": 168,
+        "vector_search_time_ms": 45
+      },
+      "success": true
+    },
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "answer": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Answer"
+      },
+      "courses": {
+        "default": [],
+        "items": {
+          "$ref": "#/$defs/CourseInfo"
+        },
+        "title": "Courses",
+        "type": "array"
+      },
+      "graph_context": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/GraphContext"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "query_metadata": {
+        "additionalProperties": true,
+        "default": {},
+        "title": "Query Metadata",
+        "type": "object"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "RAGResponse",
+    "type": "object"
+  },
+  "PrerequisitePathResponse": {
+    "$defs": {
+      "CourseInfo": {
+        "description": "Course information returned in search results",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "catalog_nbr": {
+            "title": "Catalog Nbr",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Description"
+          },
+          "credits": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Credits"
+          },
+          "similarity_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Similarity Score"
+          },
+          "graph_relevance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Graph Relevance"
+          }
+        },
+        "required": [
+          "id",
+          "subject",
+          "catalog_nbr",
+          "title"
+        ],
+        "title": "CourseInfo",
+        "type": "object"
+      },
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      },
+      "GraphContext": {
+        "description": "Graph context for a set of courses",
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/$defs/CourseInfo"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/$defs/PrerequisiteEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "centrality_scores": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Centrality Scores"
+          }
+        },
+        "required": [
+          "nodes",
+          "edges"
+        ],
+        "title": "GraphContext",
+        "type": "object"
+      },
+      "PrerequisiteEdge": {
+        "description": "Graph edge representing a prerequisite relationship",
+        "properties": {
+          "from_course_id": {
+            "title": "From Course Id",
+            "type": "string"
+          },
+          "to_course_id": {
+            "title": "To Course Id",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "confidence": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "type": "number"
+          }
+        },
+        "required": [
+          "from_course_id",
+          "to_course_id",
+          "type",
+          "confidence"
+        ],
+        "title": "PrerequisiteEdge",
+        "type": "object"
+      }
+    },
+    "description": "Response for prerequisite path queries",
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "course": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/CourseInfo"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "prerequisite_path": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/GraphContext"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      },
+      "missing_prerequisites": {
+        "default": [],
+        "items": {
+          "type": "string"
+        },
+        "title": "Missing Prerequisites",
+        "type": "array"
+      },
+      "recommendations": {
+        "default": [],
+        "items": {
+          "$ref": "#/$defs/CourseInfo"
+        },
+        "title": "Recommendations",
+        "type": "array"
+      },
+      "path_metadata": {
+        "additionalProperties": true,
+        "default": {},
+        "title": "Path Metadata",
+        "type": "object"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "PrerequisitePathResponse",
+    "type": "object"
+  },
+  "HealthResponse": {
+    "description": "Health check response",
+    "properties": {
+      "status": {
+        "enum": [
+          "healthy",
+          "degraded",
+          "unhealthy"
+        ],
+        "title": "Status",
+        "type": "string"
+      },
+      "services": {
+        "additionalProperties": {
+          "type": "boolean"
+        },
+        "default": {},
+        "title": "Services",
+        "type": "object"
+      },
+      "version": {
+        "default": "1.0.0",
+        "title": "Version",
+        "type": "string"
+      },
+      "timestamp": {
+        "title": "Timestamp",
+        "type": "string"
+      }
+    },
+    "required": [
+      "status",
+      "timestamp"
+    ],
+    "title": "HealthResponse",
+    "type": "object"
+  },
+  "CentralityRequest": {
+    "description": "Request for course centrality analysis",
+    "example": {
+      "damping_factor": 0.85,
+      "min_betweenness": 0.01,
+      "min_in_degree": 2,
+      "top_n": 20
+    },
+    "properties": {
+      "top_n": {
+        "default": 20,
+        "maximum": 100,
+        "minimum": 1,
+        "title": "Top N",
+        "type": "integer"
+      },
+      "damping_factor": {
+        "default": 0.85,
+        "maximum": 1.0,
+        "minimum": 0.1,
+        "title": "Damping Factor",
+        "type": "number"
+      },
+      "min_betweenness": {
+        "default": 0.01,
+        "maximum": 1.0,
+        "minimum": 0.0,
+        "title": "Min Betweenness",
+        "type": "number"
+      },
+      "min_in_degree": {
+        "default": 2,
+        "maximum": 20,
+        "minimum": 1,
+        "title": "Min In Degree",
+        "type": "integer"
+      }
+    },
+    "title": "CentralityRequest",
+    "type": "object"
+  },
+  "CentralityResponse": {
+    "$defs": {
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      }
+    },
+    "description": "Response for centrality analysis",
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "data": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Data"
+      },
+      "computation_time_ms": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Computation Time Ms"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "CentralityResponse",
+    "type": "object"
+  },
+  "CommunityRequest": {
+    "description": "Request for community detection analysis",
+    "example": {
+      "algorithm": "louvain"
+    },
+    "properties": {
+      "algorithm": {
+        "default": "louvain",
+        "enum": [
+          "louvain",
+          "greedy_modularity"
+        ],
+        "title": "Algorithm",
+        "type": "string"
+      }
+    },
+    "title": "CommunityRequest",
+    "type": "object"
+  },
+  "CommunityResponse": {
+    "$defs": {
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      }
+    },
+    "description": "Response for community detection analysis",
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "data": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Data"
+      },
+      "computation_time_ms": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Computation Time Ms"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "CommunityResponse",
+    "type": "object"
+  },
+  "ShortestPathRequest": {
+    "description": "Request for shortest prerequisite path",
+    "example": {
+      "completed_courses": [
+        "CS 2110",
+        "MATH 2940"
+      ],
+      "target_course": "CS 4780"
+    },
+    "properties": {
+      "target_course": {
+        "minLength": 1,
+        "title": "Target Course",
+        "type": "string"
+      },
+      "completed_courses": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Completed Courses",
+        "type": "array"
+      }
+    },
+    "required": [
+      "target_course"
+    ],
+    "title": "ShortestPathRequest",
+    "type": "object"
+  },
+  "ShortestPathResponse": {
+    "$defs": {
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      }
+    },
+    "description": "Response for shortest prerequisite path",
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "data": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Data"
+      },
+      "computation_time_ms": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Computation Time Ms"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "ShortestPathResponse",
+    "type": "object"
+  },
+  "CourseRecommendationRequest": {
+    "description": "Request for course recommendations",
+    "example": {
+      "course_code": "CS 2110",
+      "num_recommendations": 5
+    },
+    "properties": {
+      "course_code": {
+        "minLength": 1,
+        "title": "Course Code",
+        "type": "string"
+      },
+      "num_recommendations": {
+        "default": 5,
+        "maximum": 20,
+        "minimum": 1,
+        "title": "Num Recommendations",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "course_code"
+    ],
+    "title": "CourseRecommendationRequest",
+    "type": "object"
+  },
+  "CourseRecommendationResponse": {
+    "$defs": {
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      }
+    },
+    "description": "Response for course recommendations",
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "data": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Data"
+      },
+      "computation_time_ms": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Computation Time Ms"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "CourseRecommendationResponse",
+    "type": "object"
+  },
+  "AlternativePathsRequest": {
+    "description": "Request for alternative prerequisite paths",
+    "example": {
+      "completed_courses": [
+        "CS 2110",
+        "MATH 2940"
+      ],
+      "num_alternatives": 3,
+      "target_course": "CS 4780"
+    },
+    "properties": {
+      "target_course": {
+        "minLength": 1,
+        "title": "Target Course",
+        "type": "string"
+      },
+      "completed_courses": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Completed Courses",
+        "type": "array"
+      },
+      "num_alternatives": {
+        "default": 3,
+        "maximum": 10,
+        "minimum": 1,
+        "title": "Num Alternatives",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "target_course"
+    ],
+    "title": "AlternativePathsRequest",
+    "type": "object"
+  },
+  "AlternativePathsResponse": {
+    "$defs": {
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      }
+    },
+    "description": "Response for alternative prerequisite paths",
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "data": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Data"
+      },
+      "computation_time_ms": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Computation Time Ms"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "AlternativePathsResponse",
+    "type": "object"
+  },
+  "GraphSubgraphRequest": {
+    "description": "Request for graph subgraph data",
+    "example": {
+      "filter_by_subject": [
+        "CS",
+        "MATH"
+      ],
+      "include_centrality": true,
+      "include_communities": true,
+      "max_edges": 100,
+      "max_nodes": 50
+    },
+    "properties": {
+      "max_nodes": {
+        "default": 50,
+        "maximum": 200,
+        "minimum": 5,
+        "title": "Max Nodes",
+        "type": "integer"
+      },
+      "max_edges": {
+        "default": 100,
+        "maximum": 500,
+        "minimum": 10,
+        "title": "Max Edges",
+        "type": "integer"
+      },
+      "include_centrality": {
+        "default": true,
+        "title": "Include Centrality",
+        "type": "boolean"
+      },
+      "include_communities": {
+        "default": true,
+        "title": "Include Communities",
+        "type": "boolean"
+      },
+      "filter_by_subject": {
+        "anyOf": [
+          {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Filter By Subject"
+      }
+    },
+    "title": "GraphSubgraphRequest",
+    "type": "object"
+  },
+  "GraphSubgraphResponse": {
+    "$defs": {
+      "ErrorDetail": {
+        "description": "Error detail for API responses",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Details"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail",
+        "type": "object"
+      }
+    },
+    "description": "Response for graph subgraph data",
+    "properties": {
+      "success": {
+        "title": "Success",
+        "type": "boolean"
+      },
+      "data": {
+        "anyOf": [
+          {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Data"
+      },
+      "computation_time_ms": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Computation Time Ms"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/ErrorDetail"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null
+      }
+    },
+    "required": [
+      "success"
+    ],
+    "title": "GraphSubgraphResponse",
+    "type": "object"
+  }
+}
