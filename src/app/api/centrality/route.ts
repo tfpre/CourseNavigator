@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
     
     // Validate required parameters with defaults matching FastAPI model
     const requestData = {
-      top_n: body.top_n || 20,
-      damping_factor: body.damping_factor || 0.85,
-      min_betweenness: body.min_betweenness || 0.01,
-      min_in_degree: body.min_in_degree || 2
+      top_n: (body as any).top_n || 20,
+      damping_factor: (body as any).damping_factor || 0.85,
+      min_betweenness: (body as any).min_betweenness || 0.01,
+      min_in_degree: (body as any).min_in_degree || 2
     };
 
     const response = await fetch(`${FASTAPI_BASE_URL}/api/centrality`, {

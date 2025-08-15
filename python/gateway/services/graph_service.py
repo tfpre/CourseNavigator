@@ -4,6 +4,8 @@ Handles prerequisite relationships and graph queries
 """
 
 import logging
+import hashlib
+import json
 from typing import List, Dict, Any, Optional, Set
 import asyncio
 
@@ -25,11 +27,12 @@ logger = logging.getLogger(__name__)
 class GraphService:
     """Service for graph queries using Neo4j"""
     
-    def __init__(self, uri: str, username: str, password: str):
+    def __init__(self, uri: str, username: str, password: str, redis_client=None):
         self.uri = uri
         self.username = username
         self.password = password
         self.driver: Optional[AsyncDriver] = None
+        self.redis_client = redis_client
         
         # Check for mock mode via environment variable first
         import os
@@ -178,7 +181,7 @@ class GraphService:
         request: PrerequisitePathRequest
     ) -> PrerequisitePathResponse:
         """
-        Get full prerequisite path for a specific course
+        Get full prerequisite path for a specific course with Redis caching
         
         Args:
             request: Prerequisite path request
@@ -188,7 +191,30 @@ class GraphService:
         """
         if self._mock_mode:
             return await self._mock_prerequisite_path(request)
-            
+        
+        # PERFORMANCE CRITICAL: Cache prerequisite paths since graph queries are expensive
+        request_hash = hashlib.sha1(
+            json.dumps({
+                "course_id": request.course_id,
+                "max_depth": request.max_depth,
+                "include_recommendations": request.include_recommendations
+            }, sort_keys=True).encode()
+        ).hexdigest()[:12]
+        cache_key = f"preqpath:v1:{request_hash}"
+        
+        # Try cache first
+        if self.redis_client:
+            try:
+                cached = await self.redis_client.get(cache_key)
+                if cached:
+                    data = json.loads(cached)
+                    # Reconstruct PrerequisitePathResponse from cached data
+                    response = PrerequisitePathResponse(**data)
+                    logger.debug(f"Cache hit for prerequisite path {request.course_id}")
+                    return response
+            except Exception as e:
+                logger.warning(f"Redis cache read failed: {e}")
+        
         try:
             driver = await self._get_driver()
             
@@ -250,7 +276,7 @@ class GraphService:
                 else:
                     prerequisite_path = GraphContext(nodes=[target_course], edges=[])
                 
-                return PrerequisitePathResponse(
+                response = PrerequisitePathResponse(
                     success=True,
                     course=target_course,
                     prerequisite_path=prerequisite_path,
@@ -258,6 +284,20 @@ class GraphService:
                     recommendations=[],
                     path_metadata={"depth": request.max_depth}
                 )
+                
+                # Cache the successful result for 4 hours (prerequisite data changes infrequently)
+                if self.redis_client:
+                    try:
+                        await self.redis_client.setex(
+                            cache_key,
+                            4 * 3600,  # 4 hours TTL
+                            response.json()  # PrerequisitePathResponse should have json() method
+                        )
+                        logger.debug(f"Cached prerequisite path for {request.course_id}")
+                    except Exception as e:
+                        logger.warning(f"Redis cache write failed: {e}")
+                
+                return response
                 
         except Exception as e:
             logger.error(f"Prerequisite path query failed: {e}")

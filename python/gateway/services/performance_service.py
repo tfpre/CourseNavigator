@@ -173,13 +173,13 @@ class PerformanceService:
                 uptime_seconds=time.time() - self.start_time
             )
     
-    def check_performance_thresholds(self) -> Dict[str, Any]:
+    async def check_performance_thresholds(self) -> Dict[str, Any]:
         """Check if performance metrics meet required thresholds"""
         target_response_time_ms = 1200  # 1.2s target from Week 4 requirements
         max_error_rate = 0.05  # 5% max error rate
         
         metrics = self.get_performance_metrics()
-        health_status = self.get_system_health()
+        health_status = await self.get_system_health()  # CRITICAL FIX: await async call
         
         issues = []
         warnings = []
@@ -226,12 +226,12 @@ class PerformanceService:
             "system_health": health_status
         }
     
-    def get_optimization_recommendations(self) -> List[str]:
+    async def get_optimization_recommendations(self) -> List[str]:
         """Get recommendations for performance optimization"""
         recommendations = []
         
         metrics = self.get_performance_metrics()
-        health_status = self.get_system_health()
+        health_status = await self.get_system_health()  # CRITICAL FIX: await async call
         
         # Slow endpoint recommendations
         slow_endpoints = [

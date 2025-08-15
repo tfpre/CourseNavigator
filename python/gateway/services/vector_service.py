@@ -6,6 +6,7 @@ Handles semantic search using course embeddings
 import logging
 import hashlib
 import random
+import json
 from typing import List, Dict, Any, Optional
 import asyncio
 
@@ -38,12 +39,14 @@ class VectorService:
         self, 
         url: str = "http://localhost:6333", 
         collection_name: str = "cornell_courses",
-        openai_api_key: Optional[str] = None
+        openai_api_key: Optional[str] = None,
+        redis_client=None
     ):
         self.url = url
         self.collection_name = collection_name
         self.client: Optional[AsyncQdrantClient] = None
         self.openai_api_key = openai_api_key
+        self.redis_client = redis_client
         
         # Determine mock mode based on available dependencies
         qdrant_available = AsyncQdrantClient is not None
@@ -92,7 +95,7 @@ class VectorService:
         score_threshold: float = 0.7
     ) -> List[CourseInfo]:
         """
-        Search for courses using vector similarity
+        Search for courses using vector similarity with Redis caching
         
         Args:
             query_embedding: Query vector embedding
@@ -102,42 +105,82 @@ class VectorService:
         Returns:
             List of CourseInfo objects with similarity scores
         """
+        # PERFORMANCE CRITICAL: Cache search results since vector search is expensive
+        embedding_hash = hashlib.sha1(json.dumps(query_embedding[:10]).encode()).hexdigest()[:12]  # Use first 10 dims for key
+        cache_key = f"vsearch:v1:{embedding_hash}:{top_k}:{score_threshold}"
+        
+        # Try cache first
+        if self.redis_client:
+            try:
+                cached = await self.redis_client.get(cache_key)
+                if cached:
+                    course_data = json.loads(cached)
+                    courses = [CourseInfo(**course) for course in course_data]
+                    logger.debug(f"Cache hit for vector search, {len(courses)} courses")
+                    return courses
+            except Exception as e:
+                logger.warning(f"Redis cache read failed: {e}")
+        
         if self._mock_mode:
-            return await self._mock_search_courses(query_embedding, top_k)
-            
-        try:
-            client = await self._get_client()
-            
-            # Search for similar vectors
-            search_result = await client.search(
-                collection_name=self.collection_name,
-                query_vector=query_embedding,
-                limit=top_k,
-                score_threshold=score_threshold,
-                with_payload=True
-            )
-            
-            courses = []
-            for point in search_result:
-                payload = point.payload or {}
+            courses = await self._mock_search_courses(query_embedding, top_k)
+        else:
+            try:
+                client = await self._get_client()
                 
-                course = CourseInfo(
-                    id=payload.get("id", "unknown"),
-                    subject=payload.get("subject", ""),
-                    catalog_nbr=payload.get("catalog_nbr", ""),
-                    title=payload.get("title", ""),
-                    description=payload.get("description"),
-                    credits=payload.get("credits"),
-                    similarity_score=float(point.score)
+                # Search for similar vectors
+                search_result = await client.search(
+                    collection_name=self.collection_name,
+                    query_vector=query_embedding,
+                    limit=top_k,
+                    score_threshold=score_threshold,
+                    with_payload=True
                 )
-                courses.append(course)
-            
-            logger.info(f"Vector search returned {len(courses)} courses")
-            return courses
-            
-        except Exception as e:
-            logger.error(f"Vector search failed: {e}")
-            raise
+                
+                courses = []
+                for point in search_result:
+                    payload = point.payload or {}
+                    
+                    course = CourseInfo(
+                        id=payload.get("id", "unknown"),
+                        subject=payload.get("subject", ""),
+                        catalog_nbr=payload.get("catalog_nbr", ""),
+                        title=payload.get("title", ""),
+                        description=payload.get("description"),
+                        credits=payload.get("credits"),
+                        similarity_score=float(point.score)
+                    )
+                    courses.append(course)
+                
+                logger.info(f"Vector search returned {len(courses)} courses")
+                
+            except Exception as e:
+                logger.error(f"Vector search failed: {e}")
+                raise
+        
+        # Cache the results for 1 hour (course data changes infrequently)
+        if self.redis_client and courses:
+            try:
+                course_data = [
+                    {
+                        "id": course.id,
+                        "subject": course.subject,
+                        "catalog_nbr": course.catalog_nbr,
+                        "title": course.title,
+                        "description": course.description,
+                        "credits": course.credits,
+                        "similarity_score": course.similarity_score
+                    } for course in courses
+                ]
+                await self.redis_client.setex(
+                    cache_key,
+                    3600,  # 1 hour TTL
+                    json.dumps(course_data)
+                )
+                logger.debug(f"Cached vector search results for 1 hour")
+            except Exception as e:
+                logger.warning(f"Redis cache write failed: {e}")
+        
+        return courses
     
     async def _mock_search_courses(
         self, 
@@ -179,30 +222,57 @@ class VectorService:
     
     async def get_embedding(self, text: str) -> List[float]:
         """
-        Get embedding for text using OpenAI API
+        Get embedding for text using OpenAI API with Redis caching
         
         Uses text-embedding-3-small model as specified in CLAUDE.md
         """
+        # PERFORMANCE CRITICAL: Cache embeddings since they're expensive to compute
+        cache_key = f"embedding:v1:{hashlib.sha1(text.encode()).hexdigest()[:16]}"
+        
+        # Try cache first
+        if self.redis_client:
+            try:
+                cached = await self.redis_client.get(cache_key)
+                if cached:
+                    embedding = json.loads(cached)
+                    logger.debug(f"Cache hit for embedding (length: {len(embedding)})")
+                    return embedding
+            except Exception as e:
+                logger.warning(f"Redis cache read failed: {e}")
+        
         if self._mock_mode:
             # Return deterministic mock embedding vector (384 dimensions for testing)
-            return self._deterministic_mock_embedding(text)
+            embedding = self._deterministic_mock_embedding(text)
+        else:
+            try:
+                # Use the OpenAI embeddings API with text-embedding-3-small model
+                response = await openai.Embedding.acreate(
+                    model="text-embedding-3-small",
+                    input=text
+                )
+                
+                # Extract embedding vector from response
+                embedding = response['data'][0]['embedding']
+                logger.info(f"Generated OpenAI embedding for text (length: {len(embedding)})")
+                
+            except Exception as e:
+                logger.error(f"OpenAI embedding API call failed: {e}")
+                logger.warning("Falling back to mock embedding")
+                embedding = self._deterministic_mock_embedding(text)
         
-        try:
-            # Use the OpenAI embeddings API with text-embedding-3-small model
-            response = await openai.Embedding.acreate(
-                model="text-embedding-3-small",
-                input=text
-            )
-            
-            # Extract embedding vector from response
-            embedding = response['data'][0]['embedding']
-            logger.info(f"Generated OpenAI embedding for text (length: {len(embedding)})")
-            return embedding
-            
-        except Exception as e:
-            logger.error(f"OpenAI embedding API call failed: {e}")
-            logger.warning("Falling back to mock embedding")
-            return self._deterministic_mock_embedding(text)
+        # Cache the result for 7 days (embeddings don't change)
+        if self.redis_client and embedding:
+            try:
+                await self.redis_client.setex(
+                    cache_key, 
+                    7 * 24 * 3600,  # 7 days TTL
+                    json.dumps(embedding)
+                )
+                logger.debug(f"Cached embedding for 7 days")
+            except Exception as e:
+                logger.warning(f"Redis cache write failed: {e}")
+        
+        return embedding
     
     def _deterministic_mock_embedding(self, text: str) -> List[float]:
         """

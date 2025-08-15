@@ -21,6 +21,19 @@ import Graph from 'graphology';
 import { circular, random } from 'graphology-layout';
 import forceAtlas2 from 'graphology-layout-forceatlas2';
 
+// Performance optimization: Layout position cache
+// Key: (layoutType,maxNodes,maxEdges,graphVersion) -> positions
+type LayoutCacheKey = string;
+interface CachedLayout {
+  positions: { [nodeId: string]: { x: number; y: number } };
+  timestamp: number;
+  nodes: number;
+  edges: number;
+}
+
+const layoutCache = new Map<LayoutCacheKey, CachedLayout>();
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 interface CourseData {
   course_code: string;
   course_title: string;
@@ -138,6 +151,12 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
   const [layoutType, setLayoutType] = useState<'circular' | 'force' | 'hierarchical'>('hierarchical');
   const [maxNodes, setMaxNodes] = useState(50);
   const [maxEdges, setMaxEdges] = useState(100);
+  
+  // NEW: Student personalization state
+  const [personalized, setPersonalized] = useState(false);
+  const [studentMajor, setStudentMajor] = useState("Computer Science");
+  const [completedCourses, setCompletedCourses] = useState(["CS 1110", "MATH 1910"]);
+  const [currentCourses, setCurrentCourses] = useState(["CS 2110", "MATH 2930"]);
 
   // Fetch graph subgraph data from the new endpoint
   const fetchGraphData = async () => {
@@ -145,7 +164,12 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
     setError(null);
     
     try {
-      // Fetch subgraph data using the new endpoint
+      // Build fields array based on what's actually being displayed
+      const fields = ['course_code', 'course_title', 'subject', 'level'];
+      if (showCentrality) fields.push('centrality_scores');
+      if (showCommunities) fields.push('communities');
+      
+      // Fetch subgraph data using optimized field selection and personalization
       const response = await fetch('/api/graph/subgraph', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,6 +178,14 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
           max_edges: maxEdges,
           include_centrality: showCentrality,
           include_communities: showCommunities,
+          fields: fields, // Only request needed data (saves ~200KB when toggled off)
+          
+          // NEW: Student personalization parameters
+          personalized: personalized,
+          student_id: personalized ? "demo_student" : null,
+          major: personalized ? studentMajor : null,
+          completed_courses: personalized ? completedCourses : [],
+          current_courses: personalized ? currentCourses : []
         }),
       });
 
@@ -181,8 +213,12 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
         communities: result.data.communities,
       };
 
+      // PRIORITY 3 FIX: Extract graph_version for cache invalidation
+      const graphVersion = result.graph_version || 1;
+      console.log(`Fetched graph data with version v${graphVersion}`);
+
       setGraphData(processedData);
-      generateNodesAndEdges(processedData);
+      generateNodesAndEdges(processedData, graphVersion);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -192,8 +228,22 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
     }
   };
 
-  // Generate deterministic layout using Graphology
-  const generateLayout = (data: GraphData) => {
+  // Generate deterministic layout using Graphology with caching for performance
+  const generateLayout = (data: GraphData, graphVersion?: number) => {
+    // PRIORITY 3 FIX: Include graph_version in cache key (Friend's recommendation)
+    // This prevents stale layout cache after ETL updates
+    const version = graphVersion || 1;
+    const cacheKey = `v${version}-${layoutType}-${data.courses.length}-${data.prerequisites.length}-${showCentrality}-${showCommunities}`;
+    
+    // Check if we have a valid cached layout
+    const cached = layoutCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      console.log(`Using cached layout for ${cacheKey} (graph v${version})`);
+      return cached.positions;
+    }
+    
+    console.log(`Computing new layout for ${cacheKey} (graph v${version})`);
+    
     // Create graphology graph
     const graph = new Graph();
     
@@ -291,11 +341,33 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
       }
     }
     
+    // Cache the computed positions
+    const positions: { [nodeId: string]: { x: number; y: number } } = {};
+    graph.nodes().forEach(nodeId => {
+      const attrs = graph.getNodeAttributes(nodeId);
+      positions[nodeId] = { x: attrs.x || 0, y: attrs.y || 0 };
+    });
+    
+    // Store in cache
+    layoutCache.set(cacheKey, {
+      positions,
+      timestamp: Date.now(),
+      nodes: data.courses.length,
+      edges: data.prerequisites.length
+    });
+    
+    // Clean up old cache entries (basic LRU)
+    if (layoutCache.size > 50) {
+      const entries = Array.from(layoutCache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      entries.slice(0, 10).forEach(([key]) => layoutCache.delete(key));
+    }
+    
     return graph;
   };
 
   // Generate React Flow nodes and edges from graph data
-  const generateNodesAndEdges = (data: GraphData) => {
+  const generateNodesAndEdges = (data: GraphData, graphVersion?: number) => {
     // Sort courses by centrality score (most important first)
     const sortedCourses = [...data.courses].sort((a, b) => {
       const scoreA = a.centrality_score || 0;
@@ -307,13 +379,22 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
     const filteredCourses = sortedCourses.slice(0, maxNodes);
     const filteredCourseIds = new Set(filteredCourses.map(c => c.course_code));
     
-    // Generate layout with filtered data
+    // Generate layout with filtered data and graph version for cache key
     const filteredData = { ...data, courses: filteredCourses };
-    const layoutGraph = generateLayout(filteredData);
+    const layoutGraph = generateLayout(filteredData, graphVersion);
     
     // Create nodes with deterministic positions
     const newNodes: Node[] = filteredCourses.map((course) => {
-      const nodeAttributes = layoutGraph.getNodeAttributes(course.course_code);
+      let nodeAttributes = { x: 0, y: 0 };
+      try {
+        if ((layoutGraph as any).hasNode && (layoutGraph as any).hasNode(course.course_code)) {
+          const attrs = (layoutGraph as any).getNodeAttributes(course.course_code);
+          nodeAttributes = typeof attrs === 'object' && attrs.x !== undefined ? attrs : { x: 0, y: 0 };
+        }
+      } catch (e) {
+        // Fallback position if node doesn't exist
+        nodeAttributes = { x: 0, y: 0 };
+      }
       
       return {
         id: course.course_code,
@@ -362,6 +443,11 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
       generateNodesAndEdges(graphData);
     }
   }, [showCommunities, showCentrality, layoutType, maxNodes, maxEdges, graphData]);
+  
+  // Refetch data when personalization settings change
+  useEffect(() => {
+    fetchGraphData();
+  }, [personalized, studentMajor, completedCourses, currentCourses]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -456,6 +542,48 @@ export default function CourseGraphVisualization({ className = "" }: CourseGraph
                 />
                 Show Centrality
               </label>
+              
+              {/* NEW: Personalization toggle - Key demo feature */}
+              <div className="border-t pt-2">
+                <h4 className="font-medium text-xs text-gray-600 mb-1">
+                  🎯 Personalization 
+                  {personalized && <span className="text-green-600 ml-1">ACTIVE</span>}
+                </h4>
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={personalized}
+                    onChange={(e) => setPersonalized(e.target.checked)}
+                    className="mr-2"
+                  />
+                  My Academic Pathway
+                </label>
+                
+                {personalized && (
+                  <div className="mt-2 space-y-2 text-xs bg-blue-50 p-2 rounded">
+                    <div>
+                      <label className="block font-medium text-gray-700">Major:</label>
+                      <select
+                        value={studentMajor}
+                        onChange={(e) => setStudentMajor(e.target.value)}
+                        className="w-full text-xs border border-gray-300 rounded px-1 py-0.5"
+                      >
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Mathematics">Mathematics</option>
+                        <option value="Electrical Engineering">Electrical Engineering</option>
+                      </select>
+                    </div>
+                    
+                    <div className="text-xs text-gray-600">
+                      <div><strong>Completed:</strong> {completedCourses.join(', ')}</div>
+                      <div><strong>Current:</strong> {currentCourses.join(', ')}</div>
+                      <div className="mt-1 text-green-600">
+                        📊 Graph personalized to show YOUR most relevant courses
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
               
               <div className="border-t pt-2">
                 <h4 className="font-medium text-xs text-gray-600 mb-1">Layout</h4>

@@ -6,14 +6,18 @@ Combines Qdrant vector search with Neo4j graph queries
 import os
 import time
 import logging
+import asyncio
+import contextlib
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.security import HTTPBearer
 import uvicorn
+import json
 
 from .models import (
     RAGRequest, RAGResponse, PrerequisitePathRequest, PrerequisitePathResponse,
@@ -22,13 +26,29 @@ from .models import (
     CourseRecommendationRequest, CourseRecommendationResponse,
     ShortestPathRequest, ShortestPathResponse, AlternativePathsRequest, AlternativePathsResponse,
     SemesterPlanRequest, SemesterPlanResponse,
-    GraphSubgraphRequest, GraphSubgraphResponse
+    GraphSubgraphRequest, GraphSubgraphResponse,
+    # Chat and conversation models
+    ChatRequest, ChatResponse, ChatStreamChunk, ExplainRequest, ExplainResponse,
+    StudentProfile, ConversationState,
+    # Grades and provenance models
+    CourseGradesStats, GradeHistogram, GradesProvenance, ChatResponseJSON
 )
 from .services.vector_service import VectorService
 from .services.graph_service import GraphService
 from .services.rag_service import RAGService
-from .services.graph_algorithms_service import GraphAlgorithmsService
+# FACADE PATTERN: Use decomposed service facade instead of God Object
+from .services.graph_algorithms_facade import GraphAlgorithmsFacade as GraphAlgorithmsService
 from .services.performance_service import performance_service
+# CHAT ORCHESTRATOR: Multi-context conversation AI
+from .services.chat_orchestrator import ChatOrchestratorService
+from .services.grades_service import GradesService
+from .services.tag_cache import TagCache
+
+# Import graph metadata service for cache versioning (Friend's Priority 3)
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from graph_analysis.graph_metadata import GraphMetadataService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -57,6 +77,13 @@ vector_service: Optional[VectorService] = None
 graph_service: Optional[GraphService] = None
 rag_service: Optional[RAGService] = None
 graph_algorithms_service: Optional[GraphAlgorithmsService] = None
+graph_metadata_service: Optional[GraphMetadataService] = None
+chat_orchestrator_service: Optional[ChatOrchestratorService] = None
+grades_service: Optional[GradesService] = None
+redis_client = None
+
+# Security for chat endpoints
+security = HTTPBearer(auto_error=False)
 
 async def get_vector_service() -> VectorService:
     """Dependency to get vector service instance"""
@@ -94,10 +121,37 @@ async def get_graph_algorithms_service() -> GraphAlgorithmsService:
         )
     return graph_algorithms_service
 
+async def get_graph_metadata_service() -> GraphMetadataService:
+    """Dependency to get graph metadata service instance"""
+    if graph_metadata_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Graph metadata service not available"
+        )
+    return graph_metadata_service
+
+async def get_chat_orchestrator_service() -> ChatOrchestratorService:
+    """Dependency to get chat orchestrator service instance"""
+    if chat_orchestrator_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Chat service not available"
+        )
+    return chat_orchestrator_service
+
+async def get_grades_service() -> GradesService:
+    """Dependency to get grades service instance"""
+    if grades_service is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Grades service not available"
+        )
+    return grades_service
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-    global vector_service, graph_service, rag_service, graph_algorithms_service
+    global vector_service, graph_service, rag_service, graph_algorithms_service, graph_metadata_service, chat_orchestrator_service, grades_service, redis_client
     
     logger.info("Initializing Cornell Course Navigator Gateway...")
     
@@ -110,17 +164,35 @@ async def startup_event():
         raise RuntimeError("Production deployment cannot use mock services. Check USE_MOCK_SERVICES and ENVIRONMENT variables.")
     
     try:
-        # Initialize services
+        # Initialize Redis client for caching (PERFORMANCE CRITICAL)
+        redis_client = None
+        redis_url = os.getenv("REDIS_URL")
+        if redis_url:
+            try:
+                import redis.asyncio as redis
+                redis_client = redis.from_url(redis_url, decode_responses=True)
+                # Test connection
+                await redis_client.ping()
+                logger.info(f"Redis connected successfully: {redis_url}")
+            except Exception as e:
+                logger.warning(f"Redis connection failed, continuing without cache: {e}")
+                redis_client = None
+        else:
+            logger.warning("REDIS_URL not set, services will run without caching")
+        
+        # Initialize services with Redis caching
         vector_service = VectorService(
             url=os.getenv("QDRANT_URL", "http://localhost:6333"),
             collection_name=os.getenv("QDRANT_COLLECTION_NAME", "cornell_courses"),
-            openai_api_key=os.getenv("OPENAI_API_KEY")
+            openai_api_key=os.getenv("OPENAI_API_KEY"),
+            redis_client=redis_client
         )
         
         graph_service = GraphService(
             uri=os.getenv("NEO4J_URI", "bolt://localhost:7687"),
             username=os.getenv("NEO4J_USERNAME", "neo4j"),
-            password=os.getenv("NEO4J_PASSWORD", "password")
+            password=os.getenv("NEO4J_PASSWORD", "password"),
+            redis_client=redis_client
         )
         
         rag_service = RAGService(
@@ -131,6 +203,29 @@ async def startup_event():
         
         graph_algorithms_service = GraphAlgorithmsService(
             graph_service=graph_service
+        )
+        
+        # Initialize graph metadata service for cache versioning (Priority 3)
+        graph_metadata_service = GraphMetadataService(
+            neo4j_service=graph_service
+        )
+        
+        # Initialize chat orchestrator service for conversational AI
+        chat_orchestrator_service = ChatOrchestratorService(
+            vector_service=vector_service,
+            graph_service=graph_service,
+            rag_service=rag_service,
+            redis_client=redis_client,  # FIXED: Redis client now initialized
+            local_llm_client=None,  # TODO: Initialize local LLM
+            openai_api_key=os.getenv("OPENAI_API_KEY")
+        )
+        
+        # Initialize grades service for real Cornell data with provenance tracking
+        grades_service = GradesService(
+            redis_client=redis_client,
+            csv_path=os.getenv("GRADES_CSV", "data/cornell_grades.csv"),
+            tag="grades",
+            ttl_seconds=24 * 3600  # 24 hour cache
         )
         
         # Test connections in non-development mode
@@ -180,16 +275,41 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Cleanup on shutdown"""
-    global vector_service, graph_service, rag_service
+    """Cleanup on shutdown - prevents connection leaks"""
+    global vector_service, graph_service, rag_service, redis_client, chat_orchestrator_service
     
     logger.info("Shutting down Cornell Course Navigator Gateway...")
     
-    if graph_service:
-        await graph_service.close()
+    # CRITICAL: Close all connections to prevent resource leaks
+    try:
+        if graph_service:
+            await graph_service.close()
+            logger.info("Graph service connections closed")
+    except Exception as e:
+        logger.error(f"Error closing graph service: {e}")
     
-    if vector_service:
-        await vector_service.close()
+    try:
+        if vector_service:
+            await vector_service.close()
+            logger.info("Vector service connections closed")
+    except Exception as e:
+        logger.error(f"Error closing vector service: {e}")
+    
+    try:
+        if chat_orchestrator_service and hasattr(chat_orchestrator_service, "llm_router"):
+            await chat_orchestrator_service.llm_router.close()
+            logger.info("LLM router clients closed")
+    except Exception as e:
+        logger.error(f"Error closing LLM router: {e}")
+    
+    try:
+        if redis_client:
+            await redis_client.close()
+            logger.info("Redis connections closed")
+    except Exception as e:
+        logger.error(f"Error closing Redis: {e}")
+    
+    logger.info("Shutdown complete")
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -309,7 +429,8 @@ async def prerequisite_path(
 @app.post("/api/centrality", response_model=CentralityResponse)
 async def get_course_centrality(
     request: CentralityRequest,
-    service: GraphAlgorithmsService = Depends(get_graph_algorithms_service)
+    service: GraphAlgorithmsService = Depends(get_graph_algorithms_service),
+    metadata_service: GraphMetadataService = Depends(get_graph_metadata_service)
 ):
     """
     Get course centrality analysis including PageRank, bridge courses, and gateway courses.
@@ -318,9 +439,14 @@ async def get_course_centrality(
     - PageRank centrality (most important courses in curriculum)
     - Bridge courses (high betweenness centrality)
     - Gateway courses (high prerequisite requirements)
+    
+    PRIORITY 3 IMPLEMENTATION: Includes graph_version for cache invalidation
     """
     try:
         logger.info(f"Processing centrality request: top_n={request.top_n}")
+        
+        # Get current graph metadata for versioning (Friend's Priority 3)
+        graph_metadata = await metadata_service.get_current_metadata()
         
         result = await service.get_course_centrality(
             top_n=request.top_n,
@@ -329,12 +455,17 @@ async def get_course_centrality(
             min_in_degree=request.min_in_degree
         )
         
-        return CentralityResponse(**result)
+        # Inject graph version for cache invalidation
+        response = CentralityResponse(**result)
+        response.graph_version = graph_metadata.version
+        
+        return response
         
     except Exception as e:
         logger.exception(f"Centrality analysis failed: {e}")
         return CentralityResponse(
             success=False,
+            graph_version=1,  # Fallback version on error
             error=ErrorDetail(
                 code="CENTRALITY_ERROR",
                 message="Failed to compute centrality analysis",
@@ -495,18 +626,23 @@ async def optimize_semester_plan(
 @app.post("/api/graph/subgraph", response_model=GraphSubgraphResponse)
 async def get_graph_subgraph(
     request: GraphSubgraphRequest,
-    service: GraphAlgorithmsService = Depends(get_graph_algorithms_service)
+    service: GraphAlgorithmsService = Depends(get_graph_algorithms_service),
+    metadata_service: GraphMetadataService = Depends(get_graph_metadata_service)
 ):
     """
-    Get graph subgraph data for visualization.
+    Get graph subgraph data for visualization with graph versioning.
     
     This endpoint provides:
     - Course nodes with centrality scores and community assignments
     - Prerequisite edges filtered by importance
     - Optimized for frontend visualization performance
+    - PRIORITY 3: Includes graph_version for React layout cache invalidation
     """
     try:
         logger.info(f"Processing graph subgraph request: max_nodes={request.max_nodes}, max_edges={request.max_edges}")
+        
+        # Get current graph metadata for versioning (Critical for frontend cache!)
+        graph_metadata = await metadata_service.get_current_metadata()
         
         result = await service.get_graph_subgraph(
             max_nodes=request.max_nodes,
@@ -516,12 +652,23 @@ async def get_graph_subgraph(
             filter_by_subject=request.filter_by_subject
         )
         
-        return GraphSubgraphResponse(**result)
+        # Inject graph version for React layout cache invalidation
+        response = GraphSubgraphResponse(**result)
+        response.graph_version = graph_metadata.version
+        
+        # Add metadata to help with debugging cache issues
+        if 'metadata' not in response.data:
+            response.data['metadata'] = {}
+        response.data['metadata']['graph_version'] = graph_metadata.version
+        response.data['metadata']['last_updated'] = graph_metadata.last_updated.isoformat()
+        
+        return response
         
     except Exception as e:
         logger.exception(f"Graph subgraph failed: {e}")
         return GraphSubgraphResponse(
             success=False,
+            graph_version=1,  # Fallback version on error
             error=ErrorDetail(
                 code="GRAPH_SUBGRAPH_ERROR",
                 message="Failed to get graph subgraph",
@@ -626,6 +773,199 @@ async def reset_performance_metrics():
             }
         }
 
+# === Chat & Conversational AI Endpoints ===
+
+@app.post("/api/chat")
+async def chat_stream(
+    request: ChatRequest,
+    chat_service: ChatOrchestratorService = Depends(get_chat_orchestrator_service)
+):
+    """
+    Conversational AI endpoint with Server-Sent Events streaming.
+    
+    Implements friend's recommendations:
+    - <500ms perceived latency via streaming
+    - Multi-context fusion (vector + graph + professor + grades + enrollment) 
+    - Local LLM primary, OpenAI fallback
+    - Deterministic token budget allocation
+    - Redis conversation state persistence
+    
+    Performance target: First chunk <200ms, full response <450ms P95
+    """
+    
+    async def stream_generator():
+        """
+        Robust SSE generator with heartbeats and error resilience.
+        
+        Serves UX Friction Minimization ground truth by preventing connection drops
+        and ensuring reliable streaming even with network issues.
+        """
+        hb_queue = asyncio.Queue()
+
+        async def heartbeat():
+            try:
+                while True:
+                    await asyncio.sleep(5)
+                    await hb_queue.put(b'event: ping\ndata: heartbeat\n\n')
+            except asyncio.CancelledError:
+                return
+
+        hb_task = asyncio.create_task(heartbeat())
+        try:
+            # initial ping
+            yield b'event: ping\ndata: heartbeat\n\n'
+            async for chunk in chat_service.process_chat_request(request):
+                yield f"event: message\ndata: {chunk.json()}\n\n".encode("utf-8")
+                # drain any pending heartbeats but don't block
+                while not hb_queue.empty():
+                    yield hb_queue.get_nowait()
+                    
+                # If this is a "done" chunk, we're finished
+                if chunk.chunk_type == "done":
+                    break
+                    
+        except asyncio.CancelledError:
+            logger.info("SSE stream cancelled by client")
+            yield b"event: cancelled\ndata: {}\n\n"
+            
+        except Exception as e:
+            logger.exception(f"Chat streaming failed: {e}")
+            
+            # Send structured error event
+            error_chunk = ChatStreamChunk(
+                chunk_id=999,
+                content=f"I encountered an error processing your request. Please try again.",
+                chunk_type="error",
+                metadata={
+                    "error": str(e),
+                    "recoverable": True,
+                    "retry_suggested": True
+                }
+            )
+            error_message = f"event: error\ndata: {error_chunk.json()}\n\n"
+            yield error_message.encode('utf-8')
+            
+        finally:
+            hb_task.cancel()
+            with contextlib.suppress(Exception):
+                await hb_task
+            yield b"event: done\ndata: {}\n\n"
+    
+    return StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",  # Fixed: consistent media type
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Cache-Control",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering for immediate streaming
+        }
+    )
+
+@app.post("/api/chat/explain", response_model=ExplainResponse)
+async def explain_recommendation(
+    request: ExplainRequest,
+    chat_service: ChatOrchestratorService = Depends(get_chat_orchestrator_service)
+):
+    """
+    /explain slash command for power users - show recommendation reasoning.
+    
+    Friend's suggestion: Slack-style command showing attention heat-maps, 
+    graph paths, and context attribution for course recommendations.
+    """
+    try:
+        logger.info(f"Processing /explain command: conv={request.conversation_id}, idx={request.recommendation_index}")
+        
+        result = await chat_service.generate_explanation(
+            conversation_id=request.conversation_id,
+            recommendation_index=request.recommendation_index,
+            explanation_type=request.explanation_type
+        )
+        
+        if result.get("success"):
+            return ExplainResponse(
+                success=True,
+                explanation_type=result["explanation_type"],
+                visualization_data=result["visualization_data"],
+                explanation_text=result["explanation_text"],
+                recommendation_context=result["recommendation_context"],
+                processing_time_ms=int(time.time() * 1000)  # TODO: Track actual processing time
+            )
+        else:
+            return ExplainResponse(
+                success=False,
+                error=ErrorDetail(
+                    code="EXPLAIN_ERROR",
+                    message=result.get("error", "Failed to generate explanation"),
+                    details={"recommendation_index": request.recommendation_index}
+                ),
+                explanation_type=request.explanation_type,
+                visualization_data={},
+                explanation_text="",
+                processing_time_ms=0
+            )
+            
+    except Exception as e:
+        logger.exception(f"Explain recommendation failed: {e}")
+        return ExplainResponse(
+            success=False,
+            error=ErrorDetail(
+                code="EXPLAIN_ERROR",
+                message="Failed to generate explanation",
+                details={"error": str(e)}
+            ),
+            explanation_type=request.explanation_type,
+            visualization_data={},
+            explanation_text="",
+            processing_time_ms=0
+        )
+
+@app.get("/api/chat/conversation/{conversation_id}")
+async def get_conversation_history(
+    conversation_id: str,
+    chat_service: ChatOrchestratorService = Depends(get_chat_orchestrator_service)
+):
+    """
+    Retrieve conversation history for UI state restoration and context display.
+    """
+    try:
+        conversation_state = await chat_service.get_conversation_state(conversation_id)
+        
+        if conversation_state:
+            return {
+                "success": True,
+                "conversation_id": conversation_id,
+                "data": {
+                    "student_profile": conversation_state.student_profile.dict(),
+                    "message_count": len(conversation_state.messages),
+                    "last_messages": conversation_state.messages[-10:],  # Last 10 for UI
+                    "active_recommendations": conversation_state.active_recommendations,
+                    "created_at": conversation_state.created_at.isoformat(),
+                    "updated_at": conversation_state.updated_at.isoformat()
+                }
+            }
+        else:
+            return {
+                "success": False,
+                "error": {
+                    "code": "CONVERSATION_NOT_FOUND",
+                    "message": f"Conversation {conversation_id} not found"
+                }
+            }
+            
+    except Exception as e:
+        logger.exception(f"Failed to retrieve conversation: {e}")
+        return {
+            "success": False,
+            "error": {
+                "code": "CONVERSATION_ERROR",
+                "message": "Failed to retrieve conversation history",
+                "details": {"error": str(e)}
+            }
+        }
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc: RequestValidationError):
     """Handle request validation errors with structured 422 responses"""
@@ -654,6 +994,69 @@ async def validation_exception_handler(request, exc: RequestValidationError):
             }
         }
     )
+
+# === GRADES API ENDPOINTS (Ground Truth: Information Consolidation + Reliability) ===
+
+@app.get("/grades/{course_code}", response_model=CourseGradesStats)
+async def get_course_grades(
+    course_code: str,
+    grades_svc: GradesService = Depends(get_grades_service)
+):
+    """
+    Get comprehensive grade statistics for a specific course.
+    
+    Implements Ground Truth: Information Consolidation + Information Reliability
+    - Real Cornell grade data with provenance tracking
+    - TagCache versioning for performance and reliability
+    - Full grade distribution, difficulty metrics, and pass rates
+    
+    Example: /grades/CS%204820
+    """
+    stats = await grades_svc.get_course_stats(course_code.upper())
+    if not stats:
+        raise HTTPException(
+            status_code=404, 
+            detail=f"No grade data found for course: {course_code}"
+        )
+    return stats
+
+@app.post("/admin/cache/invalidate/{tag}")
+async def invalidate_cache_tag(tag: str):
+    """
+    Administrative endpoint to invalidate cached data by tag.
+    
+    Supports versioned tag invalidation strategy:
+    - Increments tag version instead of deleting keys
+    - Prevents cache storms and improves performance
+    - Essential for data freshness during development
+    
+    Example: POST /admin/cache/invalidate/grades
+    """
+    if not redis_client:
+        raise HTTPException(
+            status_code=503,
+            detail="Redis not available for cache invalidation"
+        )
+    
+    try:
+        tag_cache = TagCache(redis_client)
+        await tag_cache.invalidate(tag)
+        
+        # Get current version for response
+        current_version = await tag_cache._get_tag_version(tag)
+        
+        return {
+            "success": True,
+            "tag": tag,
+            "new_version": current_version,
+            "message": f"Cache tag '{tag}' invalidated, version bumped to {current_version}"
+        }
+    except Exception as e:
+        logger.exception(f"Failed to invalidate cache tag {tag}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Cache invalidation failed: {str(e)}"
+        )
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 interface CourseData {
   course_code: string;
@@ -96,7 +95,7 @@ export default function CourseSearch({ className = "", onCourseSelect }: CourseS
           {/* Search Bar */}
           <div className="relative mb-4">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+              <span className="text-gray-400">🔍</span>
             </div>
             <input
               type="text"
@@ -112,7 +111,7 @@ export default function CourseSearch({ className = "", onCourseSelect }: CourseS
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
           >
-            <FunnelIcon className="h-4 w-4" />
+            <span>🔽</span>
             <span>Filters</span>
             {(selectedSubject !== 'all' || selectedLevel !== 'all') && (
               <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
@@ -187,7 +186,7 @@ export default function CourseSearch({ className = "", onCourseSelect }: CourseS
             <div className="space-y-3">
               {filteredCourses.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <MagnifyingGlassIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                  <div className="text-6xl mb-2 text-gray-300">🔍</div>
                   <p>No courses found matching your criteria</p>
                   <p className="text-sm">Try adjusting your search or filters</p>
                 </div>

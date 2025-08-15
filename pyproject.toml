@@ -52,6 +52,13 @@ python-dotenv = "^1.0.1"
 tqdm = "^4.66.4"
 tenacity = "^8.5.0"  # For resilient API requests with retries
 
+# --- Web Scraping & Parsing ---
+beautifulsoup4 = "^4.12.3"  # For professor intelligence scraping
+lxml = "^5.2.2"  # Fast XML/HTML parser for BeautifulSoup
+
+# --- Caching & Redis ---
+redis = {extras = ["hiredis"], version = "^5.0.7"}  # Async Redis client with performance extras
+
 # --- Visualization ---
 matplotlib = "^3.10.3"
 seaborn = "^0.13.2"

@@ -158,7 +158,7 @@ export default function CourseRankings({ className = "" }: CourseRankingsProps) 
             Smart Course Recommendations
           </h2>
           <p className="text-gray-600 text-sm">
-            AI-powered analysis of {centralityData.analysis_metadata?.total_courses || 0} Cornell courses to help you plan your academic journey
+            AI-powered analysis of {(centralityData as any).analysis_metadata?.total_courses || 0} Cornell courses to help you plan your academic journey
           </p>
         </div>
 
@@ -166,9 +166,9 @@ export default function CourseRankings({ className = "" }: CourseRankingsProps) 
         <div className="border-b">
           <nav className="flex">
             {[
-              { id: 'central', label: 'Foundation Courses', count: centralityData.most_central_courses?.length || 0 },
-              { id: 'bridge', label: 'Bridge Courses', count: centralityData.bridge_courses?.length || 0 },
-              { id: 'gateway', label: 'Capstone Courses', count: centralityData.gateway_courses?.length || 0 }
+              { id: 'central', label: 'Foundation Courses', count: (centralityData as any).most_central_courses?.length || 0 },
+              { id: 'bridge', label: 'Bridge Courses', count: (centralityData as any).bridge_courses?.length || 0 },
+              { id: 'gateway', label: 'Capstone Courses', count: (centralityData as any).gateway_courses?.length || 0 }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -196,9 +196,9 @@ export default function CourseRankings({ className = "" }: CourseRankingsProps) 
             </p>
           </div>
 
-          {activeTab === 'central' && renderCourseList(centralityData.most_central_courses || [], 'central')}
-          {activeTab === 'bridge' && renderCourseList(centralityData.bridge_courses || [], 'bridge')}
-          {activeTab === 'gateway' && renderCourseList(centralityData.gateway_courses || [], 'gateway')}
+          {activeTab === 'central' && renderCourseList((centralityData as any).most_central_courses || [], 'central')}
+          {activeTab === 'bridge' && renderCourseList((centralityData as any).bridge_courses || [], 'bridge')}
+          {activeTab === 'gateway' && renderCourseList((centralityData as any).gateway_courses || [], 'gateway')}
         </div>
 
         {/* Footer */}

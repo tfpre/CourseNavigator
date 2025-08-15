@@ -1,0 +1,52 @@
+# Development override for Docker Compose
+# Restores bind mounts for hot-reloading during development
+# Use: docker-compose up (automatically applies overrides)
+# Production: docker-compose -f docker-compose.yml up (skip overrides)
+
+version: '3.8'
+
+services:
+  nextjs:
+    # Restore bind mounts for development hot-reload
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+
+  fastapi-gateway:
+    # Restore bind mounts for Python hot-reload
+    volumes:
+      - ./python:/app
+    environment:
+      - ENVIRONMENT=development
+      - USE_MOCK_SERVICES=true  # Enable mock fallbacks for development
+
+# Override resource limits for development (more generous)
+  nextjs:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+
+  fastapi-gateway:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  neo4j:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  qdrant:
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
