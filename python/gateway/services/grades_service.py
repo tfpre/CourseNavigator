@@ -5,13 +5,15 @@
 import csv
 import hashlib
 import logging
+import os
 import statistics
 from typing import Dict, List, Optional, Tuple
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 from .tag_cache import TagCache
-from ..models import CourseGradesStats, GradeHistogram, GradesProvenance, CourseCode
+from .provenance_service import ProvenanceService, ProvenanceTag, compute_data_version
+from ..models import CourseGradesStats, GradeHistogram, GradesProvenance, CourseCode, ProvenanceTagModel
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,13 @@ class GradesService:
         self.ttl_seconds = ttl_seconds
         self.csv_path = Path(csv_path)
         self.cache = TagCache(redis_client, ttl_s=ttl_seconds)
+        
+        # Initialize ProvenanceService for comprehensive tracking
+        self.provenance = ProvenanceService(redis_client)
+        
+        # TTL configuration from environment or defaults
+        self.GRADES_TTL_SECONDS = int(os.getenv("GRADES_TTL_DAYS", "30")) * 24 * 3600
+        self.GRADES_SOFT_TTL_SECONDS = int(os.getenv("GRADES_SOFT_TTL_DAYS", "7")) * 24 * 3600
         
         # Verify CSV exists
         if not self.csv_path.exists():
@@ -106,8 +115,8 @@ class GradesService:
             logger.warning(f"Grades CSV missing: {self.csv_path}")
             return {}
         
-        def compute_grades_data():
-            """Synchronous function to load and process CSV data"""
+        async def compute_grades_data():
+            """Asynchronous function to load and process CSV data"""
             course_data = {}
             record_count = 0
             
@@ -207,9 +216,58 @@ class GradesService:
             total_enrollment = sum(course_info["enrollments"])
             avg_difficulty = statistics.mean(course_info["difficulty_percentiles"])
             
-            # Provenance tracking
+            # Enhanced provenance tracking with ProvenanceService
+            dataset_version = os.getenv("GRADES_DATA_VERSION") or f"csv_{self._sha256_file(self.csv_path)[:8]}"
+            course_stats_payload = {
+                "mean_gpa": mean_gpa,
+                "histogram": avg_grades,
+                "pass_rate": pass_rate,
+                "enrollment_count": total_enrollment,
+                "difficulty_percentile": avg_difficulty,
+                "terms": sorted(set(course_info["terms"]))
+            }
+            data_hash = compute_data_version(course_stats_payload)
+            
+            # Create comprehensive provenance tag with term-scoped entity_id to prevent collisions
+            default_term = os.getenv("DEFAULT_TERM", "UNKNOWN")
+            entity_id = f"{default_term}:{normalized_code}" if default_term and default_term != "UNKNOWN" else normalized_code
+            expires_at = (datetime.now(timezone.utc) + timedelta(seconds=self.GRADES_TTL_SECONDS)).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            provenance_tag = ProvenanceTag(
+                source="grades",
+                entity_id=entity_id,
+                version=dataset_version,
+                data_version=data_hash,
+                term=default_term,
+                observed_at=None,  # CSV doesn't have original observation time
+                expires_at=expires_at,
+                ttl_seconds=self.GRADES_TTL_SECONDS,
+                soft_ttl_seconds=self.GRADES_SOFT_TTL_SECONDS,
+                meta={
+                    "provider": "cornell_grade_distributions",
+                    "file_path": str(self.csv_path),
+                    "record_count": record_count
+                }
+            )
+            
+            # Record provenance tag
+            await self.provenance.record(provenance_tag)
+            
+            # Check for version changes and invalidate if needed
+            async def drop_downstream_cache():
+                if hasattr(self, 'cache'):
+                    await self.cache.redis.delete(f"grades:{normalized_code}")
+            
+            await self.provenance.invalidate_on_version_change(
+                source="grades",
+                entity_id=entity_id,
+                current_version=dataset_version,
+                current_data_version=data_hash,
+                drop_cache_fn=drop_downstream_cache
+            )
+            
+            # Legacy provenance for backward compatibility
             tag_version = await self.cache._get_tag_version(self.tag)
-            provenance = GradesProvenance(
+            legacy_provenance = GradesProvenance(
                 tag=self.tag,
                 version=tag_version,
                 file_hash=self._sha256_file(self.csv_path),
@@ -220,7 +278,26 @@ class GradesService:
             # Build response
             histogram = GradeHistogram(**avg_grades)
             
-            return CourseGradesStats(
+            # Convert dataclass to Pydantic model for API serialization
+            provenance_tag_model = ProvenanceTagModel(
+                source=provenance_tag.source,
+                entity_id=provenance_tag.entity_id,
+                tenant=provenance_tag.tenant,
+                source_id=provenance_tag.source_id,
+                url=provenance_tag.url,
+                term=provenance_tag.term,
+                version=provenance_tag.version,
+                data_version=provenance_tag.data_version,
+                observed_at=provenance_tag.observed_at,
+                fetched_at=provenance_tag.fetched_at,
+                expires_at=provenance_tag.expires_at,
+                ttl_seconds=provenance_tag.ttl_seconds,
+                soft_ttl_seconds=provenance_tag.soft_ttl_seconds,
+                serialization_version=provenance_tag.serialization_version,
+                meta=provenance_tag.meta
+            )
+            
+            stats = CourseGradesStats(
                 course_code=normalized_code,
                 terms=sorted(set(course_info["terms"])),
                 mean_gpa=round(mean_gpa, 2),
@@ -229,8 +306,11 @@ class GradesService:
                 histogram=histogram,
                 enrollment_count=total_enrollment,
                 difficulty_percentile=round(avg_difficulty),
-                provenance=provenance
+                provenance=legacy_provenance,
+                provenance_tag=provenance_tag_model
             )
+                    
+            return stats
             
         except Exception as e:
             logger.exception(f"Failed to compute stats for {normalized_code}: {e}")

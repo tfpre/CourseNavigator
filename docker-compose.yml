@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Next.js frontend and API routes
   nextjs:
@@ -98,9 +96,9 @@ services:
       - ./data/neo4j:/var/lib/neo4j/import/course_data
     environment:
       - NEO4J_AUTH=neo4j/password
-      - NEO4J_PLUGINS=["apoc"]
-      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
-      - NEO4J_dbms_security_procedures_allowlist=apoc.*
+      - NEO4J_PLUGINS=["apoc","gds"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*,gds.*
     # PRODUCTION FIX: Add healthcheck to prevent startup race conditions
     healthcheck:
       test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 'Neo4j is ready' as status"]
@@ -187,7 +185,7 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    command: ["redis-server", "--save", "", "--appendonly", "no"]  # Memory-only for speed
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "200mb", "--maxmemory-policy", "allkeys-lru"]  # Memory-only for speed
     healthcheck:
       test: ["CMD", "redis-cli", "PING"]
       interval: 5s

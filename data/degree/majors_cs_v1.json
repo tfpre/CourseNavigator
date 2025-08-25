@@ -1,0 +1,192 @@
+{
+  "majors": [
+    {
+      "id": "CS_BA",
+      "name": "Computer Science BA",
+      "catalog_year": "2024-2025",
+      "requirements": [
+        {
+          "id": "core_prog", 
+          "summary": "Intro Programming", 
+          "type": "COUNT_AT_LEAST", 
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 1110", "credits": 4}, 
+            {"code": "CS 1112", "credits": 4}
+          ]
+        },
+        {
+          "id": "core_ds", 
+          "summary": "Data Structures", 
+          "type": "ALL_OF_SET",
+          "courses": [
+            {"code": "CS 2110", "credits": 3}
+          ]
+        },
+        {
+          "id": "core_logic", 
+          "summary": "Logic/Foundations", 
+          "type": "COUNT_AT_LEAST", 
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 2800", "credits": 4}, 
+            {"code": "MATH 3360", "credits": 4}
+          ]
+        },
+        {
+          "id": "core_algos", 
+          "summary": "Algorithms", 
+          "type": "COUNT_AT_LEAST", 
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 3110", "credits": 4}
+          ]
+        },
+        {
+          "id": "core_systems",
+          "summary": "Computer Systems",
+          "type": "COUNT_AT_LEAST",
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 3410", "credits": 4},
+            {"code": "CS 4410", "credits": 4}
+          ]
+        },
+        {
+          "id": "tech_electives", 
+          "summary": "Technical Electives", 
+          "type": "CREDITS_AT_LEAST", 
+          "min_credits": 15,
+          "courses": [
+            {"code": "CS 3410", "credits": 4}, 
+            {"code": "CS 3450", "credits": 4}, 
+            {"code": "CS 4410", "credits": 4}, 
+            {"code": "CS 4780", "credits": 4},
+            {"code": "CS 4820", "credits": 4},
+            {"code": "CS 5112", "credits": 4},
+            {"code": "CS 5150", "credits": 4},
+            {"code": "CS 5220", "credits": 4}
+          ]
+        },
+        {
+          "id": "math_requirements",
+          "summary": "Mathematics Requirements",
+          "type": "ALL_OF_SET",
+          "courses": [
+            {"code": "MATH 1910", "credits": 4},
+            {"code": "MATH 1920", "credits": 4},
+            {"code": "MATH 2930", "credits": 4}
+          ]
+        },
+        {
+          "id": "liberal_studies",
+          "summary": "Liberal Studies",
+          "type": "CREDITS_AT_LEAST",
+          "min_credits": 18,
+          "courses": [
+            {"code": "ENGL 1170", "credits": 3},
+            {"code": "HIST 1510", "credits": 4},
+            {"code": "PHIL 1000", "credits": 4},
+            {"code": "PSYC 1101", "credits": 3},
+            {"code": "ECON 1110", "credits": 4}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "CS_BS",
+      "name": "Computer Science BS",
+      "catalog_year": "2024-2025", 
+      "requirements": [
+        {
+          "id": "core_prog",
+          "summary": "Intro Programming",
+          "type": "COUNT_AT_LEAST",
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 1110", "credits": 4},
+            {"code": "CS 1112", "credits": 4}
+          ]
+        },
+        {
+          "id": "core_ds",
+          "summary": "Data Structures", 
+          "type": "ALL_OF_SET",
+          "courses": [
+            {"code": "CS 2110", "credits": 3}
+          ]
+        },
+        {
+          "id": "core_logic",
+          "summary": "Logic/Foundations",
+          "type": "COUNT_AT_LEAST",
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 2800", "credits": 4},
+            {"code": "MATH 3360", "credits": 4}
+          ]
+        },
+        {
+          "id": "core_algos",
+          "summary": "Algorithms",
+          "type": "COUNT_AT_LEAST", 
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 3110", "credits": 4}
+          ]
+        },
+        {
+          "id": "core_systems",
+          "summary": "Computer Systems",
+          "type": "COUNT_AT_LEAST",
+          "min_count": 1,
+          "courses": [
+            {"code": "CS 3410", "credits": 4},
+            {"code": "CS 4410", "credits": 4}
+          ]
+        },
+        {
+          "id": "tech_electives",
+          "summary": "Technical Electives",
+          "type": "CREDITS_AT_LEAST",
+          "min_credits": 21,
+          "courses": [
+            {"code": "CS 3410", "credits": 4},
+            {"code": "CS 3450", "credits": 4},
+            {"code": "CS 4410", "credits": 4},
+            {"code": "CS 4780", "credits": 4},
+            {"code": "CS 4820", "credits": 4},
+            {"code": "CS 5112", "credits": 4},
+            {"code": "CS 5150", "credits": 4},
+            {"code": "CS 5220", "credits": 4},
+            {"code": "CS 5300", "credits": 4},
+            {"code": "CS 5412", "credits": 4}
+          ]
+        },
+        {
+          "id": "math_requirements", 
+          "summary": "Mathematics Requirements",
+          "type": "ALL_OF_SET",
+          "courses": [
+            {"code": "MATH 1910", "credits": 4},
+            {"code": "MATH 1920", "credits": 4},
+            {"code": "MATH 2930", "credits": 4},
+            {"code": "MATH 2940", "credits": 4}
+          ]
+        },
+        {
+          "id": "science_requirements",
+          "summary": "Science Requirements", 
+          "type": "CREDITS_AT_LEAST",
+          "min_credits": 6,
+          "courses": [
+            {"code": "PHYS 2207", "credits": 4},
+            {"code": "PHYS 2208", "credits": 4},
+            {"code": "CHEM 2090", "credits": 4},
+            {"code": "BIOG 1440", "credits": 4}
+          ]
+        }
+      ]
+    }
+  ]
+}

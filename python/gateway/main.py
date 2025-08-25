@@ -8,16 +8,17 @@ import time
 import logging
 import asyncio
 import contextlib
+import json
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse, Response
 from fastapi.security import HTTPBearer
 import uvicorn
-import json
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST, Counter
 
 from .models import (
     RAGRequest, RAGResponse, PrerequisitePathRequest, PrerequisitePathResponse,
@@ -43,6 +44,8 @@ from .services.performance_service import performance_service
 from .services.chat_orchestrator import ChatOrchestratorService
 from .services.grades_service import GradesService
 from .services.tag_cache import TagCache
+from .routes import profiles as profiles_router
+from .routes import calendar_export as calendar_router
 
 # Import graph metadata service for cache versioning (Friend's Priority 3)
 import sys
@@ -53,6 +56,30 @@ from graph_analysis.graph_metadata import GraphMetadataService
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# HTTP request counter metric for observability (following newfix.md guidance)
+# Reload-safe metric registration to prevent uvicorn --reload errors
+try:
+    from prometheus_client import REGISTRY
+    if 'http_requests_total' not in {m._name for m in REGISTRY._collector_to_names.keys()}:
+        http_requests_total = Counter(
+            'http_requests_total',
+            'Total HTTP requests by method, path template, and status',
+            ['method', 'route', 'status']
+        )
+    else:
+        # Metric already registered, find the existing one
+        for collector in REGISTRY._collector_to_names.keys():
+            if hasattr(collector, '_name') and collector._name == 'http_requests_total':
+                http_requests_total = collector
+                break
+except:
+    # Fallback: create metric normally (first run or prometheus not available)
+    http_requests_total = Counter(
+        'http_requests_total',
+        'Total HTTP requests by method, path template, and status',
+        ['method', 'route', 'status']
+    )
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -72,6 +99,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# HTTP request counter middleware for observability
+@app.middleware("http")
+async def http_request_counter_middleware(request, call_next):
+    """Count all HTTP requests with method, route template, and status labels"""
+    response = await call_next(request)
+    
+    # Extract route template (path pattern) for better aggregation
+    route = request.url.path
+    if request.scope.get("route"):
+        route = request.scope["route"].path
+    
+    # Count the request
+    http_requests_total.labels(
+        method=request.method,
+        route=route, 
+        status=str(response.status_code)
+    ).inc()
+    
+    return response
+
 # Global service instances (will be initialized on startup)
 vector_service: Optional[VectorService] = None
 graph_service: Optional[GraphService] = None
@@ -84,6 +131,8 @@ redis_client = None
 
 # Security for chat endpoints
 security = HTTPBearer(auto_error=False)
+
+# get_redis moved to dependencies.py to avoid circular imports
 
 async def get_vector_service() -> VectorService:
     """Dependency to get vector service instance"""
@@ -267,6 +316,22 @@ async def startup_event():
             logger.warning(f"GDS projection initialization failed (will retry per-request): {e}")
             # Don't fail startup - algorithms can still create projections on-demand
         
+        # Start background task for SCARD reconciliation (prevents Redis index drift)
+        # Following newfix.md guidance: prevent silent drift/redis noise during demo
+        if grades_service and grades_service.provenance:
+            async def reconcile_scard_background():
+                """Background task to reconcile provenance index sizes every minute"""
+                while True:
+                    try:
+                        await asyncio.sleep(60)  # Wait 60 seconds
+                        await grades_service.provenance.reconcile_index_sizes()
+                    except Exception as e:
+                        logger.warning(f"SCARD reconciliation background task failed: {e}")
+            
+            # Start the background task
+            asyncio.create_task(reconcile_scard_background())
+            logger.info("SCARD reconciliation background task started (60s interval)")
+        
         logger.info("All services initialized successfully")
         
     except Exception as e:
@@ -301,6 +366,13 @@ async def shutdown_event():
             logger.info("LLM router clients closed")
     except Exception as e:
         logger.error(f"Error closing LLM router: {e}")
+
+    try:
+        if chat_orchestrator_service:
+            await chat_orchestrator_service.close()
+            logger.info("Chat orchestrator service connections closed")
+    except Exception as e:
+        logger.error(f"Error closing chat orchestrator service: {e}")
     
     try:
         if redis_client:
@@ -346,6 +418,13 @@ async def health_check():
         services=services,
         timestamp=datetime.utcnow().isoformat()
     )
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+app.include_router(profiles_router.router)
+app.include_router(calendar_router.router)
 
 @app.post("/api/rag_with_graph", response_model=RAGResponse)
 async def rag_with_graph(
@@ -393,7 +472,7 @@ async def prerequisite_path(
     graph_svc: GraphService = Depends(get_graph_service)
 ):
     """
-    Get prerequisite path for a specific course.
+    Get prerequisite path for a specific course. 
     
     Returns the full dependency chain needed to take the target course.
     """
@@ -781,87 +860,44 @@ async def chat_stream(
     chat_service: ChatOrchestratorService = Depends(get_chat_orchestrator_service)
 ):
     """
-    Conversational AI endpoint with Server-Sent Events streaming.
+    Conversational AI endpoint with robust Server-Sent Events streaming.
     
-    Implements friend's recommendations:
+    Implements UX Friction Minimization ground truth:
     - <500ms perceived latency via streaming
-    - Multi-context fusion (vector + graph + professor + grades + enrollment) 
-    - Local LLM primary, OpenAI fallback
-    - Deterministic token budget allocation
-    - Redis conversation state persistence
+    - Resilient SSE with heartbeats and auto-reconnection
+    - Client disconnect detection and graceful cancellation
+    - Multi-context fusion with deterministic token budgets
     
     Performance target: First chunk <200ms, full response <450ms P95
     """
+    from .utils.sse import resilient_sse_stream, create_sse_response_headers
     
-    async def stream_generator():
-        """
-        Robust SSE generator with heartbeats and error resilience.
-        
-        Serves UX Friction Minimization ground truth by preventing connection drops
-        and ensuring reliable streaming even with network issues.
-        """
-        hb_queue = asyncio.Queue()
-
-        async def heartbeat():
-            try:
-                while True:
-                    await asyncio.sleep(5)
-                    await hb_queue.put(b'event: ping\ndata: heartbeat\n\n')
-            except asyncio.CancelledError:
-                return
-
-        hb_task = asyncio.create_task(heartbeat())
+    async def content_generator():
+        """Convert chat service chunks to SSE-compatible string stream"""
         try:
-            # initial ping
-            yield b'event: ping\ndata: heartbeat\n\n'
             async for chunk in chat_service.process_chat_request(request):
-                yield f"event: message\ndata: {chunk.json()}\n\n".encode("utf-8")
-                # drain any pending heartbeats but don't block
-                while not hb_queue.empty():
-                    yield hb_queue.get_nowait()
-                    
-                # If this is a "done" chunk, we're finished
-                if chunk.chunk_type == "done":
-                    break
-                    
-        except asyncio.CancelledError:
-            logger.info("SSE stream cancelled by client")
-            yield b"event: cancelled\ndata: {}\n\n"
-            
+                # Convert ChatStreamChunk to JSON string for SSE
+                yield chunk.json()
         except Exception as e:
-            logger.exception(f"Chat streaming failed: {e}")
-            
-            # Send structured error event
-            error_chunk = ChatStreamChunk(
-                chunk_id=999,
-                content=f"I encountered an error processing your request. Please try again.",
-                chunk_type="error",
-                metadata={
+            logger.exception(f"Chat processing error: {e}")
+            # Yield error as JSON
+            error_chunk = {
+                "chunk_id": 999,
+                "content": "I encountered an error processing your request. Please try again.",
+                "chunk_type": "error",
+                "metadata": {
                     "error": str(e),
                     "recoverable": True,
                     "retry_suggested": True
-                }
-            )
-            error_message = f"event: error\ndata: {error_chunk.json()}\n\n"
-            yield error_message.encode('utf-8')
-            
-        finally:
-            hb_task.cancel()
-            with contextlib.suppress(Exception):
-                await hb_task
-            yield b"event: done\ndata: {}\n\n"
+                },
+                "timestamp": time.time()
+            }
+            yield json.dumps(error_chunk)
     
     return StreamingResponse(
-        stream_generator(),
-        media_type="text/event-stream",  # Fixed: consistent media type
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Cache-Control",
-            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-            "X-Accel-Buffering": "no",  # Disable nginx buffering for immediate streaming
-        }
+        resilient_sse_stream(content_generator(), request, event_type="message"),
+        media_type="text/event-stream",
+        headers=create_sse_response_headers()
     )
 
 @app.post("/api/chat/explain", response_model=ExplainResponse)
@@ -870,7 +906,7 @@ async def explain_recommendation(
     chat_service: ChatOrchestratorService = Depends(get_chat_orchestrator_service)
 ):
     """
-    /explain slash command for power users - show recommendation reasoning.
+    /explain slash command for power users - show recommendation reasoning. 
     
     Friend's suggestion: Slack-style command showing attention heat-maps, 
     graph paths, and context attribution for course recommendations.
@@ -1003,7 +1039,7 @@ async def get_course_grades(
     grades_svc: GradesService = Depends(get_grades_service)
 ):
     """
-    Get comprehensive grade statistics for a specific course.
+    Get comprehensive grade statistics for a specific course. 
     
     Implements Ground Truth: Information Consolidation + Information Reliability
     - Real Cornell grade data with provenance tracking
@@ -1023,7 +1059,7 @@ async def get_course_grades(
 @app.post("/admin/cache/invalidate/{tag}")
 async def invalidate_cache_tag(tag: str):
     """
-    Administrative endpoint to invalidate cached data by tag.
+    Administrative endpoint to invalidate cached data by tag. 
     
     Supports versioned tag invalidation strategy:
     - Increments tag version instead of deleting keys

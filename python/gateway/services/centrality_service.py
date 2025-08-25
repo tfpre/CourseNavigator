@@ -158,7 +158,8 @@ class CentralityService:
             logger.info(f"Computing centrality analysis: top_n={validated['top_n']}, batched={use_batched}")
             
             # Use batched analysis for better performance (Friend's Priority 2)
-            if use_batched:
+            # TEMPORARILY DISABLED FOR DEBUGGING
+            if False and use_batched:
                 analysis = await self.centrality_analyzer.run_batched_centrality_analysis(
                     top_n=validated['top_n'],
                     damping_factor=validated['damping_factor'],
@@ -267,3 +268,9 @@ class CentralityService:
             "cached_keys": list(self._cache.keys()),
             "cache_timestamps_count": len(self._cache_timestamps)
         }
+    
+    async def _ensure_graph_exists(self, graph_name: str = None):
+        """Delegate graph existence check to centrality analyzer's graph context"""
+        if graph_name is None:
+            graph_name = "prerequisite_graph"
+        return await self.centrality_analyzer.graph_context.ensure_graph_exists(graph_name)

@@ -105,25 +105,21 @@ class CourseCentrality:
             if not result:
                 raise Exception("No data returned from batched centrality query")
                 
-            # Parse batched results - Neo4j returns columns in order
-            if not result or len(result[0]) < 4:
-                logger.warning("Incomplete batched centrality results")
-                raise Exception("Batched query returned incomplete results")
+            # Parse batched results - now wrapped in "result" object
+            if not result:
+                raise Exception("No data returned from batched centrality query")
             
-            batch_result = result[0]
+            # Extract the result object from the query response
+            batch_result = result[0].get("result", {}) if result and len(result) > 0 else {}
             
-            # Handle both dictionary and tuple formats from Neo4j
-            if isinstance(batch_result, dict):
-                pagerank_results = batch_result.get("pagerank_results", []) or []
-                betweenness_results = batch_result.get("betweenness_results", []) or []
-                gateway_results = batch_result.get("gateway_results", []) or []
-                course_metadata = batch_result.get("course_metadata", []) or []
-            else:
-                # Neo4j returns results as tuple/list in column order
-                pagerank_results = batch_result[0] if len(batch_result) > 0 else []
-                betweenness_results = batch_result[1] if len(batch_result) > 1 else []
-                gateway_results = batch_result[2] if len(batch_result) > 2 else []
-                course_metadata = batch_result[3] if len(batch_result) > 3 else []
+            if not batch_result:
+                raise Exception("Batched query returned no result object")
+            
+            # Extract each component from the structured result
+            pagerank_results = batch_result.get("pagerank_results", []) or []
+            betweenness_results = batch_result.get("betweenness_results", []) or []
+            gateway_results = batch_result.get("gateway_results", []) or []
+            course_metadata = batch_result.get("course_metadata", []) or []
             
             # Build lookup map for course metadata
             metadata_lookup = {

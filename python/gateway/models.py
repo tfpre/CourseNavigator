@@ -310,14 +310,24 @@ class StudentProfile(BaseModel):
     """
     student_id: str = Field(..., description="Unique student identifier")
     major: Optional[str] = Field(None, description="Primary major (e.g., 'Computer Science')")
+    track: Optional[str] = Field(None, description="Specialization track within major")
     minor: Optional[str] = Field(None, description="Minor field of study")
     year: Optional[Literal["freshman", "sophomore", "junior", "senior", "graduate"]] = Field(None, description="Academic year")
     completed_courses: List[str] = Field(default=[], description="List of completed course codes")
     current_courses: List[str] = Field(default=[], description="Currently enrolled course codes")
     interests: List[str] = Field(default=[], description="Academic interests and career goals")
     gpa: Optional[float] = Field(None, ge=0.0, le=4.0, description="Current GPA")
+    gpa_goal: Optional[float] = Field(None, ge=0.0, le=4.0, description="Target GPA goal")
+    risk_tolerance: Optional[Literal["low", "medium", "high"]] = Field(None, description="Course difficulty preference")
+    blocked_times: List[str] = Field(default=[], description="Time slots to avoid (e.g. 'MWF 8:00-9:00')")
     preferences: Dict[str, Any] = Field(default={}, description="Learning preferences and constraints")
+    dislikes_morning: Optional[bool] = Field(default=False, description="Dislikes early morning classes")
+    no_friday: Optional[bool] = Field(default=False, description="Prefers no Friday classes")
+    planned_courses: List[str] = Field(default=[], description="Future planned course codes")
     
+    class Config:
+        extra = "allow"
+
     @validator('completed_courses', 'current_courses', pre=True)
     def normalize_course_codes(cls, v):
         """Normalize course codes to consistent format"""
@@ -411,6 +421,27 @@ class ContextSource(BaseModel):
 
 CourseCode = str  # e.g. "CS 4820" - standardized format
 
+class ProvenanceTagModel(BaseModel):
+    """
+    Pydantic model for provenance metadata - mirrors dataclass for API/UI serialization.
+    Tracks data sources, versions, and freshness for Information Reliability.
+    """
+    source: str = Field(..., description="Data source name (e.g., 'grades', 'professors')")
+    entity_id: str = Field(..., description="Entity identifier (e.g., 'CS 4780')")
+    tenant: Optional[str] = Field(None, description="Multi-tenant identifier")
+    source_id: Optional[str] = Field(None, description="Upstream source identifier")
+    url: Optional[str] = Field(None, description="Source URL if applicable")
+    term: Optional[str] = Field(None, description="Academic term (e.g., 'FA25')")
+    version: Optional[str] = Field(None, description="Dataset/ETL version")
+    data_version: Optional[str] = Field(None, description="Content hash/checksum")
+    observed_at: Optional[str] = Field(None, description="When fact was observed (ISO-8601)")
+    fetched_at: Optional[str] = Field(None, description="When we fetched the data (ISO-8601)")
+    expires_at: Optional[str] = Field(None, description="Expiration timestamp (ISO-8601)")
+    ttl_seconds: int = Field(default=0, description="TTL for cache expiration")
+    soft_ttl_seconds: Optional[int] = Field(None, description="Soft refresh threshold")
+    serialization_version: int = Field(default=1, description="Schema version")
+    meta: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+
 class GradeHistogram(BaseModel):
     """Grade distribution histogram with percentage breakdown"""
     grade_a_pct: float = Field(..., ge=0.0, le=100.0, description="A grade percentage")
@@ -451,7 +482,8 @@ class CourseGradesStats(BaseModel):
     histogram: GradeHistogram = Field(..., description="Grade distribution breakdown")
     enrollment_count: int = Field(..., description="Total enrollment across terms")
     difficulty_percentile: Optional[int] = Field(None, ge=0, le=100, description="Difficulty ranking (higher = harder)")
-    provenance: GradesProvenance = Field(..., description="Data source tracking")
+    provenance: GradesProvenance = Field(..., description="Data source tracking")  # Legacy field for backward compatibility
+    provenance_tag: Optional[ProvenanceTagModel] = Field(None, description="Comprehensive provenance metadata")
 
 class Recommendation(BaseModel):
     """
@@ -658,5 +690,53 @@ __all__ = [
     
     # Slash command models
     "ExplainRequest",
-    "ExplainResponse"
+    "ExplainResponse",
+    
+    # Chat schema enforcement models
+    "NextActionType",
+    "NextAction", 
+    "ChatAdvisorResponse",
+    
+    # Provenance models
+    "ProvenanceTagModel"
 ]
+
+# Chat schema enforcement models
+from typing import Literal
+from pydantic import field_validator, ConfigDict
+
+NextActionType = Literal["add_to_plan", "check_prereqs", "consider_alternative", "waitlist_monitor"]
+
+class NextAction(BaseModel):
+    type: NextActionType
+    course_code: Optional[str] = Field(default=None, description="SUBJ #### if applicable")
+    note: Optional[str] = None
+
+class ChatAdvisorResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")  # forbid unknown keys for security and schema enforcement
+    schema_version: Literal["v1"] = "v1"
+    recommendations: List[Recommendation] = Field(default_factory=list, min_length=1, max_length=8)
+    constraints: List[str] = Field(default_factory=list, max_length=12)
+    next_actions: List[NextAction] = Field(default_factory=list, max_length=12)
+    notes: Optional[str] = None
+    provenance: List[str] = Field(default_factory=list, max_length=12)
+
+    @field_validator("recommendations")
+    @classmethod
+    def _sorted_priorities(cls, items: List[Recommendation]) -> List[Recommendation]:
+        return sorted(items, key=lambda r: r.priority)
+
+import sys as _sys
+
+# --- Back-compat for old `from gateway.models.chat_schema import ...` imports ----
+this_module = _sys.modules[__name__]
+
+_sys.modules.setdefault(
+    "python.gateway.models.chat_schema",   # legacy absolute form
+    this_module
+)
+_sys.modules.setdefault(
+    "gateway.models.chat_schema",          # legacy relative form
+    this_module
+)
+# -------------------------------------------------------------------------------

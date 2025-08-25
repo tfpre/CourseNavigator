@@ -155,10 +155,8 @@ class CommunityService:
             logger.info(f"Computing community detection: algorithm={validated['algorithm']}")
             
             # Run community detection
-            analysis = await self.community_analyzer.analyze_communities(
-                algorithm=validated['algorithm'],
-                max_iterations=validated['max_iterations'],
-                tolerance=validated['tolerance']
+            analysis = await self.community_analyzer.run_complete_analysis(
+                algorithm=validated['algorithm']
             )
             
             # Convert to service response format

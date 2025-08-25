@@ -119,7 +119,7 @@ export const useCourseAdvisorChat = (options: UseCourseAdvisorChatOptions = {}):
     }
   }, []);
 
-  // Send message with SSE streaming
+  // Send message with resilient SSE streaming
   const sendMessage = useCallback(async (message: string) => {
     if (!message.trim() || isStreaming) return;
 
@@ -129,10 +129,6 @@ export const useCourseAdvisorChat = (options: UseCourseAdvisorChatOptions = {}):
     setStreamingContent('');
     setIsStreaming(true);
 
-    // Create abort controller for this request
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
     // Add user message immediately
     const userMessage: ChatMessage = {
       role: 'user',
@@ -141,61 +137,79 @@ export const useCourseAdvisorChat = (options: UseCourseAdvisorChatOptions = {}):
     };
     setMessages(prev => [...prev, userMessage]);
 
-    try {
-      // Prepare chat request following FastAPI model structure
-      const chatRequest = {
-        message: message.trim(),
-        conversation_id: conversationId,
-        student_profile: studentProfile,
-        context_preferences: {
-          include_prerequisites: true,
-          include_professor_ratings: true,
-          include_difficulty_info: true,
-          include_enrollment_data: true,
-          include_similar_courses: true
-        },
-        stream: true,
-        max_recommendations: 5
-      };
+    // Prepare chat request following FastAPI model structure
+    const chatRequest = {
+      message: message.trim(),
+      conversation_id: conversationId,
+      student_profile: studentProfile,
+      context_preferences: {
+        include_prerequisites: true,
+        include_professor_ratings: true,
+        include_difficulty_info: true,
+        include_enrollment_data: true,
+        include_similar_courses: true
+      },
+      stream: true,
+      max_recommendations: 5
+    };
 
-      // Make streaming request
-      const response = await fetch(gatewayUrl, {
-        method: 'POST',
+    try {
+      // Create abort controller for the SSE connection
+      abortControllerRef.current = new AbortController();
+
+      // Use fetch-based SSE client with POST streaming (supports Bearer auth)
+      const { createFetchSSE } = await import('../utils/fetch-sse');
+      
+      const sseClient = createFetchSSE(gatewayUrl, {
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
-          'Cache-Control': 'no-cache'
+          // Add authorization headers here if needed in future
+          // 'Authorization': `Bearer ${authToken}`,
         },
         body: JSON.stringify(chatRequest),
-        signal: abortController.signal
-      });
-
-      if (!response.ok) {
-        throw new Error(`Chat request failed with status ${response.status}: ${response.statusText}`);
-      }
-
-      if (!response.body) {
-        throw new Error('No response body received from chat endpoint');
-      }
-
-      // Process Server-Sent Events stream with enhanced chunk-safe parser
-      await processSSEStream(response.body, {
-        onChunk: (chunk: ChatStreamChunk) => {
-          handleStreamChunk(chunk);
+        onMessage: (message) => {
+          // Skip heartbeat and connection messages
+          if (message.data && message.data !== 'heartbeat' && message.data !== 'connected' && message.data !== 'stream_complete') {
+            try {
+              const chunk: ChatStreamChunk = JSON.parse(message.data);
+              handleStreamChunk(chunk);
+            } catch (parseError) {
+              console.error('Failed to parse SSE message:', parseError);
+            }
+          }
         },
-        onError: (error: Error) => {
-          setError(`Stream processing error: ${error.message}`);
+        onError: (error) => {
+          console.error('SSE error:', error);
+          setError(`Connection error: ${error.message}`);
           setIsStreaming(false);
         },
-        onHeartbeat: () => {
-          // Connection still alive - could show subtle indicator
+        onConnectionStatus: (status) => {
+          if (status === 'reconnecting') {
+            setContextInfo('Reconnecting...');
+          } else if (status === 'connected') {
+            setContextInfo('Connected');
+            setTimeout(() => setContextInfo(''), 1000);
+          } else if (status === 'disconnected') {
+            setIsStreaming(false);
+          }
         },
-        signal: abortController.signal
+        onHeartbeat: () => {
+          // Connection alive - could show subtle indicator
+        },
+        maxReconnectAttempts: 5,
+        heartbeatTimeoutMs: 15000
       });
+
+      // Store reference for cleanup
+      abortControllerRef.current.signal.addEventListener('abort', () => {
+        sseClient.close();
+      });
+
+      // Start the connection
+      await sseClient.connect();
 
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        // Request was aborted - this is expected during cleanup
         return;
       }
       
@@ -299,113 +313,5 @@ export const useCourseAdvisorChat = (options: UseCourseAdvisorChatOptions = {}):
   };
 };
 
-// Enhanced SSE stream processor with chunk-safe parsing
-// Based on newfix.md recommendations for robust TCP chunk handling
-async function processSSEStream(
-  body: ReadableStream<Uint8Array>,
-  handlers: {
-    onChunk: (chunk: ChatStreamChunk) => void;
-    onError: (error: Error) => void;
-    onHeartbeat?: () => void;
-    signal?: AbortSignal;
-  }
-) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buf = "";
-  let warmingUpShown = false;
-
-  try {
-    // Show warming up indicator after 600ms if no first token
-    const warmUpTimer = setTimeout(() => {
-      if (!warmingUpShown) {
-        // Could show subtle "warming up" shimmer here
-        warmingUpShown = true;
-      }
-    }, 600);
-
-    for (;;) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      // Check if request was aborted
-      if (handlers.signal?.aborted) {
-        break;
-      }
-
-      buf += decoder.decode(value, { stream: true });
-
-      let idx: number;
-      while ((idx = buf.indexOf("\n\n")) >= 0) {
-        const frame = buf.slice(0, idx);
-        buf = buf.slice(idx + 2);
-        
-        // Parse SSE fields - supports: event: <name>\n data: <payload>
-        let event = "message";
-        let data = "";
-        
-        for (const line of frame.split("\n")) {
-          if (line.startsWith("event:")) {
-            event = line.slice(6).trim();
-          } else if (line.startsWith("data:")) {
-            data += line.slice(5).trim();
-          }
-        }
-        
-        // Handle heartbeat pings (every 10s from server)
-        if (event === "ping") {
-          if (handlers.onHeartbeat) {
-            handlers.onHeartbeat();
-          }
-          continue; // heartbeat - keep connection alive
-        }
-        
-        // Handle stream termination
-        if (data === "[DONE]") {
-          clearTimeout(warmUpTimer);
-          return;
-        }
-        
-        // Skip empty data
-        if (!data || data === "{}") {
-          continue;
-        }
-
-        try {
-          // Parse chat chunk data
-          const chunk: ChatStreamChunk = JSON.parse(data);
-          
-          // Clear warming up timer on first real chunk
-          if (!warmingUpShown) {
-            clearTimeout(warmUpTimer);
-            warmingUpShown = true;
-          }
-          
-          handlers.onChunk(chunk);
-          
-          // If this is a done chunk, we can break early
-          if (chunk.chunk_type === 'done') {
-            clearTimeout(warmUpTimer);
-            break;
-          }
-          
-        } catch (parseError) {
-          console.error('Failed to parse SSE chunk:', parseError, 'Raw data:', data);
-          // Don't throw - continue processing other chunks for resilience
-        }
-      }
-    }
-    
-    // Flush any last partial frame if needed (optional no-op here)
-    clearTimeout(warmUpTimer);
-    
-  } catch (error) {
-    if (error instanceof Error && error.name !== 'AbortError') {
-      handlers.onError(error);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
 
 export default useCourseAdvisorChat;

@@ -1,0 +1,134 @@
+groups:
+  - name: coursenavigator-demo
+    rules:
+      # Error rate monitoring - critical for demo stability
+      # Note: Uses chat_request_duration_seconds as FastAPI doesn't emit http_requests_total by default
+      - alert: HighErrorRate
+        expr: rate(sse_stream_errors_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High error rate detected"
+          description: "SSE stream error rate is {{ $value }} errors/sec over the last 5 minutes, above 0.01 threshold"
+          runbook: "Check gateway logs and context service health"
+
+      # Redis index health - empty indexes indicate data loading failures
+      - alert: EmptyProvenanceIndex  
+        expr: p_index_size{source="professors"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          component: redis
+        annotations:
+          summary: "Professor provenance index is empty"
+          description: "Professor intelligence index has been empty for 5 minutes"
+          runbook: "Check professor intelligence service and RMP scraping"
+
+      - alert: EmptyGraphIndex
+        expr: p_index_size{source="graphctx"} == 0  
+        for: 5m
+        labels:
+          severity: warning
+          component: redis
+        annotations:
+          summary: "Graph context index is empty"
+          description: "Graph context index has been empty for 5 minutes"
+          runbook: "Check Neo4j connectivity and graph analysis service"
+
+      # ISO parser fallback tracking - indicates data quality issues
+      - alert: ParseFallbackDetected
+        expr: increase(prov_parse_fallback_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: info
+          component: data-quality  
+        annotations:
+          summary: "ISO timestamp parse fallbacks detected"
+          description: "{{ $value }} timestamp parse fallbacks in last 10 minutes"
+          runbook: "Check upstream data source timestamp formats"
+
+      # Chat service availability
+      - alert: ChatServiceDown
+        expr: up{job="coursenavigator-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Chat service is down"
+          description: "CourseNavigator API is not responding to health checks"
+          runbook: "Check Docker containers and restart if needed"
+
+      # High latency warning - for demo SLO monitoring  
+      - alert: HighChatLatency
+        expr: histogram_quantile(0.95, rate(chat_request_duration_seconds_bucket[5m])) > 0.5
+        for: 3m
+        labels:
+          severity: warning
+          component: performance
+        annotations:
+          summary: "High chat response latency"
+          description: "P95 chat latency is {{ $value }}s, above 500ms SLO"
+          runbook: "Check context service timeouts and LLM response times"
+
+      # Critical latency SLO breach - demo-blocking threshold
+      - alert: ChatLatencySLOBreach
+        expr: histogram_quantile(0.95, sum by (le) (rate(chat_request_duration_seconds_bucket[5m]))) > 3
+        for: 2m
+        labels:
+          severity: critical
+          component: performance
+        annotations:
+          summary: "Chat latency SLO breach"
+          description: "P95 chat latency is {{ $value }}s, above 3s SLO - demo-blocking"
+          runbook: "Immediate investigation required - check LLM response times and context service performance"
+
+      # Context service timeout rate
+      - alert: HighContextTimeoutRate
+        expr: rate(context_timeout_total[5m]) / rate(context_requests_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          component: context
+        annotations:
+          summary: "High context service timeout rate" 
+          description: "{{ $value | humanizePercentage }} of context requests timing out"
+          runbook: "Check individual context service health and network latency"
+
+      # SSE stream health
+      - alert: SSEStreamFailures
+        expr: rate(sse_stream_errors_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+          component: streaming
+        annotations:
+          summary: "SSE streaming failures detected"
+          description: "{{ $value }} SSE stream failures per second"
+          runbook: "Check chat orchestrator logs and client connection stability"
+
+      # SSE chunk gap monitoring
+      - alert: SSEChunkGapsDetected
+        expr: rate(sse_chunk_gap_exceeded_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          component: streaming
+        annotations:
+          summary: "SSE chunk gaps > 1.5s detected"
+          description: "{{ $value }} SSE chunk gaps per second over 1.5s threshold"
+          runbook: "Check LLM response latency and context service performance"
+
+      # Demo-specific: Cache hit rate degradation
+      - alert: LowCacheHitRate
+        expr: rate(cache_hits_total[10m]) / (rate(cache_hits_total[10m]) + rate(cache_misses_total[10m])) < 0.8
+        for: 5m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "Cache hit rate below 80%"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}, below 80% target"
+          runbook: "Check Redis memory usage and TTL configurations"

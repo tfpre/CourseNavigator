@@ -1,0 +1,339 @@
+from_course_id,to_course_id,type,confidence,raw_text
+FA25-CHEM-2070-1,FA25-CHEM-2080-1,or_group,0.9,CHEM 2070 or CHEM 2090.
+FA25-CHEM-2090-1,FA25-CHEM-2080-1,or_group,0.9,CHEM 2070 or CHEM 2090.
+FA25-CHEM-2070-1,FA25-CHEM-2770-1,and_group,0.9,CHEM 2070 and CHEM 2080.
+FA25-CHEM-2080-1,FA25-CHEM-2770-1,and_group,0.9,CHEM 2070 and CHEM 2080.
+FA25-CHEM-2070-1,FA25-CHEM-2780-1,and_group,0.9,CHEM 2070 and CHEM 2080.
+FA25-CHEM-2080-1,FA25-CHEM-2780-1,and_group,0.9,CHEM 2070 and CHEM 2080.
+FA25-CHEM-2080-1,FA25-CHEM-3570-1,mandatory_or_permission,0.6000000000000001,"CHEM 2080 or advanced placement, or permission of instructor."
+FA25-CHEM-3570-1,FA25-CHEM-3580-1,mandatory_or_permission,0.6000000000000001,CHEM 3570 or permission of instructor.
+FA25-CHEM-2080-1,FA25-CHEM-3870-1,or_group_or_permission,0.6000000000000001,"CHEM 2080, MATH 1110 and MATH 1120, and PHYS 2208, or permission of instructor."
+FA25-MATH-1110-1,FA25-CHEM-3870-1,or_group_or_permission,0.6000000000000001,"CHEM 2080, MATH 1110 and MATH 1120, and PHYS 2208, or permission of instructor."
+FA25-MATH-1120-1,FA25-CHEM-3870-1,or_group_or_permission,0.6000000000000001,"CHEM 2080, MATH 1110 and MATH 1120, and PHYS 2208, or permission of instructor."
+FA25-CHEM-2080-1,FA25-CHEM-3890-1,or_group_or_permission,0.6000000000000001,"CHEM 2080 and PHYS 2208, and CHEM 3890, and MATH 1920, MATH 2220 or MATH 2310, or permission of instructor."
+FA25-CHEM-3890-1,FA25-CHEM-3890-1,or_group_or_permission,0.6000000000000001,"CHEM 2080 and PHYS 2208, and CHEM 3890, and MATH 1920, MATH 2220 or MATH 2310, or permission of instructor."
+FA25-MATH-1920-1,FA25-CHEM-3890-1,or_group_or_permission,0.6000000000000001,"CHEM 2080 and PHYS 2208, and CHEM 3890, and MATH 1920, MATH 2220 or MATH 2310, or permission of instructor."
+FA25-MATH-2220-1,FA25-CHEM-3890-1,or_group_or_permission,0.6000000000000001,"CHEM 2080 and PHYS 2208, and CHEM 3890, and MATH 1920, MATH 2220 or MATH 2310, or permission of instructor."
+FA25-MATH-2310-1,FA25-CHEM-3890-1,or_group_or_permission,0.6000000000000001,"CHEM 2080 and PHYS 2208, and CHEM 3890, and MATH 1920, MATH 2220 or MATH 2310, or permission of instructor."
+FA25-CHEM-3890-1,FA25-CHEM-4210-1,or_group_or_permission,0.6000000000000001,"CHEM 3030 and CHEM 3890-CHEM 3900 or CHEM 3870-CHEM 3880 and CHEM 2900 with average of B- or better, or permission of instructor."
+FA25-CHEM-3870-1,FA25-CHEM-4210-1,or_group_or_permission,0.6000000000000001,"CHEM 3030 and CHEM 3890-CHEM 3900 or CHEM 3870-CHEM 3880 and CHEM 2900 with average of B- or better, or permission of instructor."
+FA25-CHEM-3570-1,FA25-CHEM-4500-1,or_group,0.6000000000000001,"CHEM 3570-CHEM 3580, or CHEM 3590-CHEM 3600 or equivalent."
+FA25-CHEM-3580-1,FA25-CHEM-4500-1,or_group,0.6000000000000001,"CHEM 3570-CHEM 3580, or CHEM 3590-CHEM 3600 or equivalent."
+FA25-CHEM-3600-1,FA25-CHEM-4500-1,or_group,0.6000000000000001,"CHEM 3570-CHEM 3580, or CHEM 3590-CHEM 3600 or equivalent."
+FA25-CHEM-3020-1,FA25-CHEM-4610-1,or_group_or_permission,0.6000000000000001,CHEM 3020 and CHEM 3580 or CHEM 3600 with grade of B- or better or permission of instructor.
+FA25-CHEM-3580-1,FA25-CHEM-4610-1,or_group_or_permission,0.6000000000000001,CHEM 3020 and CHEM 3580 or CHEM 3600 with grade of B- or better or permission of instructor.
+FA25-CHEM-3600-1,FA25-CHEM-4610-1,or_group_or_permission,0.6000000000000001,CHEM 3020 and CHEM 3580 or CHEM 3600 with grade of B- or better or permission of instructor.
+FA25-CHEM-5110-1,FA25-CHEM-5120-1,mandatory,0.9,CHEM 5110.
+FA25-CHEM-3890-1,FA25-CHEM-6050-1,or_group_or_permission,0.6000000000000001,"CHEM 3890-CHEM 3900, CHEM 4100 or equivalent or permission of instructor."
+FA25-CHEM-3870-1,FA25-CHEM-6291-1,mandatory,0.39999999999999997,physical chemistry (CHEM 3870 or 3890/ 3900) or equivalent.
+FA25-CHEM-3570-1,FA25-CHEM-6450-1,or_group,0.6000000000000001,CHEM 3570-CHEM 3580 or CHEM 3590-CHEM 3600 or equivalent.
+FA25-CHEM-3580-1,FA25-CHEM-6450-1,or_group,0.6000000000000001,CHEM 3570-CHEM 3580 or CHEM 3590-CHEM 3600 or equivalent.
+FA25-CHEM-3600-1,FA25-CHEM-6450-1,or_group,0.6000000000000001,CHEM 3570-CHEM 3580 or CHEM 3590-CHEM 3600 or equivalent.
+FA25-CHEM-3580-1,FA25-CHEM-6650-1,or_group_or_permission,0.6000000000000001,"CHEM 3900 and CHEM 3580, or CHEM 3600, or equivalents, or permission of instructor."
+FA25-CHEM-3600-1,FA25-CHEM-6650-1,or_group_or_permission,0.6000000000000001,"CHEM 3900 and CHEM 3580, or CHEM 3600, or equivalents, or permission of instructor."
+FA25-CHEM-3580-1,FA25-CHEM-6690-1,or_group_or_permission,0.6000000000000001,"CHEM 3580 or CHEM 3600, and CHEM 4100, or permission of instructor."
+FA25-CHEM-3600-1,FA25-CHEM-6690-1,or_group_or_permission,0.6000000000000001,"CHEM 3580 or CHEM 3600, and CHEM 4100, or permission of instructor."
+FA25-MATH-1110-1,FA25-CS-1112-1,mandatory,0.6000000000000001,MATH 1110 or equivalent.
+FA25-CS-1110-1,FA25-CS-2110-1,or_group,0.6000000000000001,CS 1110 or CS 1112 or equivalent course on programming in a procedural language.
+FA25-CS-1112-1,FA25-CS-2110-1,or_group,0.6000000000000001,CS 1110 or CS 1112 or equivalent course on programming in a procedural language.
+FA25-CS-1110-1,FA25-CS-2112-1,or_group_or_permission,0.6000000000000001,"excellent performance in CS 1110, CS 1112 or equivalent course in Java or C++, or permission of instructor."
+FA25-CS-1112-1,FA25-CS-2112-1,or_group_or_permission,0.6000000000000001,"excellent performance in CS 1110, CS 1112 or equivalent course in Java or C++, or permission of instructor."
+FA25-MATH-1110-1,FA25-CS-2800-1,or_group,0.6000000000000001,"MATH 1110 or equivalent, CS 1110 or CS 1112 or equivalent., or"
+FA25-CS-1110-1,FA25-CS-2800-1,or_group,0.6000000000000001,"MATH 1110 or equivalent, CS 1110 or CS 1112 or equivalent., or"
+FA25-CS-1112-1,FA25-CS-2800-1,or_group,0.6000000000000001,"MATH 1110 or equivalent, CS 1110 or CS 1112 or equivalent., or"
+FA25-CS-2110-1,FA25-CS-3110-1,corequisite,0.7000000000000001,CS 2110 or equivalent programming experience. Prerequisite or corequisite: CS 2800.
+FA25-CS-2800-1,FA25-CS-3110-1,corequisite,0.7000000000000001,CS 2110 or equivalent programming experience. Prerequisite or corequisite: CS 2800.
+FA25-CS-2110-1,FA25-CS-3410-1,mandatory,0.6000000000000001,CS 2110 or equivalent programming experience.
+FA25-CS-2110-1,FA25-CS-3700-1,or_group_or_permission,0.6000000000000001,"CS 2110/ENGRD 2110 and CS 2800, or by permission of instructor."
+FA25-ENGRD-2110-2,FA25-CS-3700-1,or_group_or_permission,0.6000000000000001,"CS 2110/ENGRD 2110 and CS 2800, or by permission of instructor."
+FA25-CS-2800-1,FA25-CS-3700-1,or_group_or_permission,0.6000000000000001,"CS 2110/ENGRD 2110 and CS 2800, or by permission of instructor."
+FA25-CS-2800-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-ENGRD-2700-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-MATH-4710-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-MATH-2210-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-MATH-2310-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-MATH-2940-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-MATH-1110-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-MATH-1920-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-CS-2110-1,FA25-CS-3780-1,or_group,0.6,"probability theory (e.g. BTRY 3080, CS 2800, ECON 3130, ENGRD 2700, MATH 4710) and linear algebra (e.g. MATH 2210, MATH 2310, MATH 2940), single-variable calculus (e.g. MATH 1110, MATH 1920) and programming proficiency (e.g. CS 2110)."
+FA25-CS-3110-1,FA25-CS-4110-1,mandatory_or_permission,0.6000000000000001,CS 3110 or permission of instructor.
+FA25-MATH-2210-1,FA25-CS-4210-2,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2230-1,FA25-CS-4210-2,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2310-1,FA25-CS-4210-2,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2940-1,FA25-CS-4210-2,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-CS-2110-1,FA25-CS-4320-1,mandatory,0.9,"CS 2110, CS 2800."
+FA25-CS-2800-1,FA25-CS-4320-1,mandatory,0.9,"CS 2110, CS 2800."
+FA25-CS-2110-1,FA25-CS-4414-1,or_group,0.6000000000000001,"CS 2110, CS 3410, or equivalent."
+FA25-CS-3410-1,FA25-CS-4414-1,or_group,0.6000000000000001,"CS 2110, CS 3410, or equivalent."
+FA25-CS-3410-1,FA25-CS-4420-2,or_group,0.9,"ECE 3140/CS 3420 or CS 3410. Students should feel comfortable working with a hardware description language such as Verilog, SystemVerilog, or VHDL."
+FA25-CS-2110-1,FA25-CS-4620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-ENGRD-2110-2,FA25-CS-4620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-1910-1,FA25-CS-4620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-1120-1,FA25-CS-4620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-2940-1,FA25-CS-4620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-2210-1,FA25-CS-4620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-2310-1,FA25-CS-4620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-CS-4620-1,FA25-CS-4621-1,corequisite,1.0,Prerequisite or corequisite: CS 4620.
+FA25-CS-3700-1,FA25-CS-4701-1,or_group,0.6000000000000001,"at least one of the following courses: CS 3700, CS 3780, CS 4670, CS 4740, ECE 4200, ORIE 3741, STSCI 3740, or their equivalents."
+FA25-CS-3780-1,FA25-CS-4701-1,or_group,0.6000000000000001,"at least one of the following courses: CS 3700, CS 3780, CS 4670, CS 4740, ECE 4200, ORIE 3741, STSCI 3740, or their equivalents."
+FA25-CS-1112-1,FA25-CS-4750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-CS-2110-1,FA25-CS-4750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-CS-2800-1,FA25-CS-4750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-MATH-1920-1,FA25-CS-4750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-MATH-2940-1,FA25-CS-4750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-CS-2110-1,FA25-CS-4775-2,or_group,0.6000000000000001,BTRY 3010 and CS 2110 or equivalents.
+FA25-CS-3780-1,FA25-CS-4787-1,or_group,0.6000000000000001,"CS 3780/CS 5780, CS 2110 or equivalents."
+FA25-CS-5780-1,FA25-CS-4787-1,or_group,0.6000000000000001,"CS 3780/CS 5780, CS 2110 or equivalents."
+FA25-CS-2110-1,FA25-CS-4787-1,or_group,0.6000000000000001,"CS 3780/CS 5780, CS 2110 or equivalents."
+FA25-CS-2800-1,FA25-CS-4820-1,mandatory,0.9,"CS 2800, CS 3110."
+FA25-CS-3110-1,FA25-CS-4820-1,mandatory,0.9,"CS 2800, CS 3110."
+FA25-CS-4820-1,FA25-CS-4830-1,mandatory,0.9,CS 4820.
+FA25-CS-3110-1,FA25-CS-5110-1,mandatory_or_permission,0.6000000000000001,CS 3110 or permission of instructor.
+FA25-CS-3110-1,FA25-CS-5154-1,or_group_or_permission,0.6000000000000001,"graduate standing in CS, or CS majors who have taken CS 3110 or CS 4120, or permission of instructor."
+FA25-CS-2110-1,FA25-CS-5320-1,or_group,0.9,CS 2110 or CS 2800.
+FA25-CS-2800-1,FA25-CS-5320-1,or_group,0.9,CS 2110 or CS 2800.
+FA25-CS-2110-1,FA25-CS-5416-1,or_group,0.6000000000000001,"CS 2110, CS 3410, or equivalent."
+FA25-CS-3410-1,FA25-CS-5416-1,or_group,0.6000000000000001,"CS 2110, CS 3410, or equivalent."
+FA25-CS-1110-1,FA25-CS-5424-2,mandatory,0.6000000000000001,CS 1110 or equivalent.
+FA25-CS-2110-1,FA25-CS-5620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-ENGRD-2110-2,FA25-CS-5620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-1910-1,FA25-CS-5620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-1120-1,FA25-CS-5620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-2940-1,FA25-CS-5620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-2210-1,FA25-CS-5620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-MATH-2310-1,FA25-CS-5620-1,or_group,0.6000000000000001,"CS 2110 or ENGRD 2110, and MATH 1910 or MATH 1120, and MATH 2940 or MATH 2210 or MATH 2310 or equivalent."
+FA25-CS-5620-1,FA25-CS-5621-1,corequisite,1.0,Prerequisite or corequisite: CS 5620.
+FA25-CS-2110-1,FA25-CS-5670-1,or_group,0.39999999999999997,"CS 2110, CS 2800, MATH 1920 or equivalent and MATH 2310 or MATH 2940 or equivalent (Ithaca only)."
+FA25-CS-2800-1,FA25-CS-5670-1,or_group,0.39999999999999997,"CS 2110, CS 2800, MATH 1920 or equivalent and MATH 2310 or MATH 2940 or equivalent (Ithaca only)."
+FA25-MATH-1920-1,FA25-CS-5670-1,or_group,0.39999999999999997,"CS 2110, CS 2800, MATH 1920 or equivalent and MATH 2310 or MATH 2940 or equivalent (Ithaca only)."
+FA25-MATH-2310-1,FA25-CS-5670-1,or_group,0.39999999999999997,"CS 2110, CS 2800, MATH 1920 or equivalent and MATH 2310 or MATH 2940 or equivalent (Ithaca only)."
+FA25-MATH-2940-1,FA25-CS-5670-1,or_group,0.39999999999999997,"CS 2110, CS 2800, MATH 1920 or equivalent and MATH 2310 or MATH 2940 or equivalent (Ithaca only)."
+FA25-CS-1112-1,FA25-CS-5750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-CS-2110-1,FA25-CS-5750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-CS-2800-1,FA25-CS-5750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-MATH-1920-1,FA25-CS-5750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-MATH-2940-1,FA25-CS-5750-1,or_group,0.6000000000000001,"CS 1112, CS 2110, CS 2800, MATH 1920, MATH 2940 or their equivalents."
+FA25-CS-3780-1,FA25-CS-5777-1,or_group,0.6000000000000001,"CS 3780/CS 5780, CS 2110 or equivalents."
+FA25-CS-5780-1,FA25-CS-5777-1,or_group,0.6000000000000001,"CS 3780/CS 5780, CS 2110 or equivalents."
+FA25-CS-2110-1,FA25-CS-5777-1,or_group,0.6000000000000001,"CS 3780/CS 5780, CS 2110 or equivalents."
+FA25-CS-2800-1,FA25-CS-5780-1,or_group,0.6,"CS 2800, probability theory (e.g. BTRY 3080, ECON 3130, MATH 4710, ENGRD 2700), linear algebra (e.g. MATH 2940), calculus (e.g. MATH 1920), and programming proficiency (e.g. CS 2110)."
+FA25-MATH-4710-1,FA25-CS-5780-1,or_group,0.6,"CS 2800, probability theory (e.g. BTRY 3080, ECON 3130, MATH 4710, ENGRD 2700), linear algebra (e.g. MATH 2940), calculus (e.g. MATH 1920), and programming proficiency (e.g. CS 2110)."
+FA25-ENGRD-2700-1,FA25-CS-5780-1,or_group,0.6,"CS 2800, probability theory (e.g. BTRY 3080, ECON 3130, MATH 4710, ENGRD 2700), linear algebra (e.g. MATH 2940), calculus (e.g. MATH 1920), and programming proficiency (e.g. CS 2110)."
+FA25-MATH-2940-1,FA25-CS-5780-1,or_group,0.6,"CS 2800, probability theory (e.g. BTRY 3080, ECON 3130, MATH 4710, ENGRD 2700), linear algebra (e.g. MATH 2940), calculus (e.g. MATH 1920), and programming proficiency (e.g. CS 2110)."
+FA25-MATH-1920-1,FA25-CS-5780-1,or_group,0.6,"CS 2800, probability theory (e.g. BTRY 3080, ECON 3130, MATH 4710, ENGRD 2700), linear algebra (e.g. MATH 2940), calculus (e.g. MATH 1920), and programming proficiency (e.g. CS 2110)."
+FA25-CS-2110-1,FA25-CS-5780-1,or_group,0.6,"CS 2800, probability theory (e.g. BTRY 3080, ECON 3130, MATH 4710, ENGRD 2700), linear algebra (e.g. MATH 2940), calculus (e.g. MATH 1920), and programming proficiency (e.g. CS 2110)."
+FA25-CS-2110-1,FA25-CS-5781-1,mandatory,0.6000000000000001,"CS 2110, or equivalent programming experience."
+FA25-CS-2800-1,FA25-CS-5785-1,mandatory_or_permission,0.6000000000000001,"CS 2800 or equivalent and basic familiarity with Matlab or Python, or permission of instructor."
+FA25-CS-5785-1,FA25-CS-5787-1,or_group,0.9,"CS 5785, ECE 5414, ORIE 5750."
+FA25-CS-4820-1,FA25-CS-5820-1,mandatory,0.9,CS 4820 or graduate level students.
+FA25-CS-2800-1,FA25-CS-5830-1,or_group_or_permission,0.6000000000000001,"CS 2800 or equivalent, CS 4810 or mathematical maturity, or permission of instructor."
+FA25-CS-3110-1,FA25-CS-6117-1,mandatory,0.9,CS 3110.
+FA25-CS-3110-1,FA25-CS-6158-1,or_group,0.5000000000000001,"at least one of the following courses or their equivalents: CS 3110, CS 4120, CS 5154 and at least one of the following courses or their equivalents: CS 3780, CS 4740, CS 4782."
+FA25-CS-5154-1,FA25-CS-6158-1,or_group,0.5000000000000001,"at least one of the following courses or their equivalents: CS 3110, CS 4120, CS 5154 and at least one of the following courses or their equivalents: CS 3780, CS 4740, CS 4782."
+FA25-CS-3780-1,FA25-CS-6158-1,or_group,0.5000000000000001,"at least one of the following courses or their equivalents: CS 3110, CS 4120, CS 5154 and at least one of the following courses or their equivalents: CS 3780, CS 4740, CS 4782."
+FA25-CS-2110-1,FA25-CS-6741-1,or_group,0.6000000000000001,"CS 2110 or equivalent programming experience, CS 3780/CS 5780 or CS 6780 or equivalent."
+FA25-CS-3780-1,FA25-CS-6741-1,or_group,0.6000000000000001,"CS 2110 or equivalent programming experience, CS 3780/CS 5780 or CS 6780 or equivalent."
+FA25-CS-5780-1,FA25-CS-6741-1,or_group,0.6000000000000001,"CS 2110 or equivalent programming experience, CS 3780/CS 5780 or CS 6780 or equivalent."
+FA25-CS-3110-1,FA25-CS-6742-1,mandatory,0.29999999999999993,"CS 3110 or equivalent programming experience, a course in artificial intelligence or any relevant subfield (e.g., NLP, information retrieval, machine learning)."
+FA25-CS-3780-1,FA25-CS-6783-1,or_group_or_permission,0.6000000000000001,"CS 3780/CS 5780 or CS 4786/CS 5786 or CS 6780 or equivalent, or permission of instructor."
+FA25-CS-5780-1,FA25-CS-6783-1,or_group_or_permission,0.6000000000000001,"CS 3780/CS 5780 or CS 4786/CS 5786 or CS 6780 or equivalent, or permission of instructor."
+FA25-CS-3780-1,FA25-CS-6784-1,or_group_or_permission,0.6000000000000001,CS 3780 or CS 5780 or equivalents or permission of instructor.
+FA25-CS-5780-1,FA25-CS-6784-1,or_group_or_permission,0.6000000000000001,CS 3780 or CS 5780 or equivalents or permission of instructor.
+FA25-CS-4820-1,FA25-CS-6820-1,mandatory,0.9,CS 4820 or graduate level students.
+FA25-PHYS-1112-1,FA25-ENGRD-2020-1,corequisite,1.0,PHYS 1112. Corequisite: MATH 1920.
+FA25-MATH-1920-1,FA25-ENGRD-2020-1,corequisite,1.0,PHYS 1112. Corequisite: MATH 1920.
+FA25-MATH-1920-1,FA25-ENGRD-2100-1,corequisite,1.0,MATH 1920 or PHYS 1112. Corequisite: MATH 2930 or PHYS 2213.
+FA25-PHYS-1112-1,FA25-ENGRD-2100-1,corequisite,1.0,MATH 1920 or PHYS 1112. Corequisite: MATH 2930 or PHYS 2213.
+FA25-MATH-2930-1,FA25-ENGRD-2100-1,corequisite,1.0,MATH 1920 or PHYS 1112. Corequisite: MATH 2930 or PHYS 2213.
+FA25-PHYS-2213-1,FA25-ENGRD-2100-1,corequisite,1.0,MATH 1920 or PHYS 1112. Corequisite: MATH 2930 or PHYS 2213.
+FA25-CS-1110-1,FA25-ENGRD-2110-2,or_group,0.6000000000000001,CS 1110 or CS 1112 or equivalent course on programming in a procedural language.
+FA25-CS-1112-1,FA25-ENGRD-2110-2,or_group,0.6000000000000001,CS 1110 or CS 1112 or equivalent course on programming in a procedural language.
+FA25-CHEM-2090-1,FA25-ENGRD-2111-2,or_group,0.9,"CHEM 2090, MATH 1920, and BIOG 1350 or BIOG 1440."
+FA25-MATH-1920-1,FA25-ENGRD-2111-2,or_group,0.9,"CHEM 2090, MATH 1920, and BIOG 1350 or BIOG 1440."
+FA25-CS-1110-1,FA25-ENGRD-2112-2,or_group_or_permission,0.6000000000000001,"excellent performance in CS 1110, CS 1112 or equivalent course in Java or C++, or permission of instructor."
+FA25-CS-1112-1,FA25-ENGRD-2112-2,or_group_or_permission,0.6000000000000001,"excellent performance in CS 1110, CS 1112 or equivalent course in Java or C++, or permission of instructor."
+FA25-CHEM-2080-1,FA25-ENGRD-2190-1,and_group,0.9,"CHEM 2080, CHEM 2090, and an ENGRI course."
+FA25-CHEM-2090-1,FA25-ENGRD-2190-1,and_group,0.9,"CHEM 2080, CHEM 2090, and an ENGRI course."
+FA25-MATH-1920-1,FA25-ENGRD-2210-1,and_group,0.9,MATH 1920 and PHYS 1112.
+FA25-PHYS-1112-1,FA25-ENGRD-2210-1,and_group,0.9,MATH 1920 and PHYS 1112.
+FA25-MATH-1110-1,FA25-ENGRD-2250-2,or_group,0.9,MATH 1110 or MATH 1910.
+FA25-MATH-1910-1,FA25-ENGRD-2250-2,or_group,0.9,MATH 1110 or MATH 1910.
+FA25-CS-1110-1,FA25-ENGRD-2300-1,or_group,0.9,CS 1110 or CS 1112.
+FA25-CS-1112-1,FA25-ENGRD-2300-1,or_group,0.9,CS 1110 or CS 1112.
+FA25-CHEM-2070-1,FA25-ENGRD-2510-2,corequisite,1.0,CHEM 2070 or CHEM 2090 or AP Chem. Prerequisite or corequisite: MATH 2930.
+FA25-CHEM-2090-1,FA25-ENGRD-2510-2,corequisite,1.0,CHEM 2070 or CHEM 2090 or AP Chem. Prerequisite or corequisite: MATH 2930.
+FA25-MATH-2930-1,FA25-ENGRD-2510-2,corequisite,1.0,CHEM 2070 or CHEM 2090 or AP Chem. Prerequisite or corequisite: MATH 2930.
+FA25-MATH-2930-1,FA25-ENGRD-2600-2,corequisite,0.3999999999999999,"Prerequisite or corequisite: MATH 2930, two semesters of core biology major classes (BIOMG 1350, BIOG 1440, BIOG 1445 or BIOEE 1610 ) plus BIOG 1500 or equivalent."
+FA25-PHYS-1112-1,FA25-ENGRD-2610-2,or_group,0.9,PHYS 1112 or PHYS 1117.
+FA25-MATH-1910-1,FA25-ENGRD-2700-1,mandatory,0.9,"MATH 1910, MATH 1920."
+FA25-MATH-1920-1,FA25-ENGRD-2700-1,mandatory,0.9,"MATH 1910, MATH 1920."
+FA25-MATH-1920-1,FA25-ENGRD-2720-2,corequisite,1.0,MATH 1920 and either CS 1110 or CS 1112. Corequisite: MATH 2940.
+FA25-CS-1110-1,FA25-ENGRD-2720-2,corequisite,1.0,MATH 1920 and either CS 1110 or CS 1112. Corequisite: MATH 2940.
+FA25-CS-1112-1,FA25-ENGRD-2720-2,corequisite,1.0,MATH 1920 and either CS 1110 or CS 1112. Corequisite: MATH 2940.
+FA25-MATH-2940-1,FA25-ENGRD-2720-2,corequisite,1.0,MATH 1920 and either CS 1110 or CS 1112. Corequisite: MATH 2940.
+FA25-MATH-1101-1,FA25-MATH-1106-1,mandatory,0.6,"three years of high school mathematics, including trigonometry and logarithms, or a precalculus course (e.g., MATH 1101). No prior knowledge of calculus is required."
+FA25-MATH-1101-1,FA25-MATH-1110-1,mandatory,0.7,"three years of high school mathematics, including trigonometry and logarithms, or a precalculus course (e.g., MATH 1101)."
+FA25-MATH-1110-1,FA25-MATH-1120-1,or_group,0.6000000000000001,"MATH 1110, excellent performance in MATH 1106, or equivalent AP credit."
+FA25-MATH-1106-1,FA25-MATH-1120-1,or_group,0.6000000000000001,"MATH 1110, excellent performance in MATH 1106, or equivalent AP credit."
+FA25-MATH-1110-1,FA25-MATH-1910-1,mandatory,0.29999999999999993,"Three years high school mathematics, including trigonometry and logarithms, and at least one course in differential and integral calculus (e.g., MATH 1110), or equivalent AP credit."
+FA25-MATH-1910-1,FA25-MATH-1920-1,mandatory,0.6000000000000001,MATH 1910 or equivalent AP credit.
+FA25-MATH-1110-1,FA25-MATH-2210-1,or_group_or_permission,0.6000000000000001,"MATH 1110-MATH 1120 with high performance, equivalent AP credit, or permission of department."
+FA25-MATH-1120-1,FA25-MATH-2210-1,or_group_or_permission,0.6000000000000001,"MATH 1110-MATH 1120 with high performance, equivalent AP credit, or permission of department."
+FA25-MATH-2210-1,FA25-MATH-2220-1,mandatory,0.9,MATH 2210.
+FA25-MATH-1110-1,FA25-MATH-2230-1,or_group_or_permission,0.6000000000000001,"MATH 1110-MATH 1120 with a grade of A- or better, equivalent AP credit, or permission of instructor."
+FA25-MATH-1120-1,FA25-MATH-2230-1,or_group_or_permission,0.6000000000000001,"MATH 1110-MATH 1120 with a grade of A- or better, equivalent AP credit, or permission of instructor."
+FA25-MATH-1106-1,FA25-MATH-2310-1,or_group,0.6000000000000001,"MATH 1106, MATH 1110, or equivalent AP credit."
+FA25-MATH-1110-1,FA25-MATH-2310-1,or_group,0.6000000000000001,"MATH 1106, MATH 1110, or equivalent AP credit."
+FA25-MATH-1920-1,FA25-MATH-2930-1,mandatory,0.9,MATH 1920.
+FA25-MATH-1920-1,FA25-MATH-2940-1,mandatory,0.9,MATH 1920.
+FA25-MATH-2210-1,FA25-MATH-3040-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-3040-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-3040-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-3040-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-3110-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2230-1,FA25-MATH-3110-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2310-1,FA25-MATH-3110-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2940-1,FA25-MATH-3110-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2220-1,FA25-MATH-3110-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-1920-1,FA25-MATH-3110-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2210-1,FA25-MATH-3210-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2230-1,FA25-MATH-3210-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2310-1,FA25-MATH-3210-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2940-1,FA25-MATH-3210-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2220-1,FA25-MATH-3210-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-1920-1,FA25-MATH-3210-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2210-1,FA25-MATH-3270-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2230-1,FA25-MATH-3270-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2310-1,FA25-MATH-3270-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2940-1,FA25-MATH-3270-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2220-1,FA25-MATH-3270-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-1920-1,FA25-MATH-3270-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2210-1,FA25-MATH-3320-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-3320-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-3320-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-3320-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4040-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4040-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4040-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4040-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2220-1,FA25-MATH-4040-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-1920-1,FA25-MATH-4040-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4130-1,or_group,0.29999999999999993,"high level of performance in a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4130-1,or_group,0.29999999999999993,"high level of performance in a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4130-1,or_group,0.29999999999999993,"high level of performance in a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4130-1,or_group,0.29999999999999993,"high level of performance in a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2220-1,FA25-MATH-4130-1,or_group,0.29999999999999993,"high level of performance in a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-1920-1,FA25-MATH-4130-1,or_group,0.29999999999999993,"high level of performance in a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2220-1,FA25-MATH-4220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-1920-1,FA25-MATH-4220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2230-1,FA25-MATH-4250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2310-1,FA25-MATH-4250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2940-1,FA25-MATH-4250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2210-1,FA25-MATH-4310-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4310-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4310-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4310-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4330-1,or_group,0.6000000000000001,"high level of performance in MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4330-1,or_group,0.6000000000000001,"high level of performance in MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4330-1,or_group,0.6000000000000001,"high level of performance in MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4330-1,or_group,0.6000000000000001,"high level of performance in MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4370-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4370-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4370-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4370-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4520-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4520-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4520-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4520-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-4530-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-4530-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-4530-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-4530-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, MATH 2940, or equivalent."
+FA25-MATH-1110-1,FA25-MATH-4710-1,or_group,0.6000000000000001,"MATH 1110-MATH 1120, or equivalent."
+FA25-MATH-1120-1,FA25-MATH-4710-1,or_group,0.6000000000000001,"MATH 1110-MATH 1120, or equivalent."
+FA25-MATH-2210-1,FA25-MATH-5220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2230-1,FA25-MATH-5220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2310-1,FA25-MATH-5220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2940-1,FA25-MATH-5220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2220-1,FA25-MATH-5220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-1920-1,FA25-MATH-5220-1,or_group,0.29999999999999993,"a semester of linear algebra (MATH 2210, MATH 2230, MATH 2310, or MATH 2940) and a semester of multivariable calculus (MATH 2220, MATH 2240, or MATH 1920), or equivalent."
+FA25-MATH-2210-1,FA25-MATH-5250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent, and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2230-1,FA25-MATH-5250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent, and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2310-1,FA25-MATH-5250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent, and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2940-1,FA25-MATH-5250-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230-MATH 2240, MATH 2310, or MATH 2940 or equivalent, and one additional mathematics course numbered 3000 or above."
+FA25-MATH-2210-1,FA25-MATH-5410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, or MATH 2940, or equivalent."
+FA25-MATH-2230-1,FA25-MATH-5410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, or MATH 2940, or equivalent."
+FA25-MATH-2310-1,FA25-MATH-5410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, or MATH 2940, or equivalent."
+FA25-MATH-2940-1,FA25-MATH-5410-1,or_group,0.6000000000000001,"MATH 2210, MATH 2230, MATH 2310, or MATH 2940, or equivalent."
+FA25-MATH-4130-1,FA25-MATH-6150-1,or_group_or_permission,0.6000000000000001,"MATH 4130, MATH 4140, or the equivalent, or permission of instructor."
+FA25-MATH-4130-1,FA25-MATH-6210-1,and_group,0.9,undergraduate analysis and linear algebra at the level of MATH 4130 and MATH 4310.
+FA25-MATH-4310-1,FA25-MATH-6210-1,and_group,0.9,undergraduate analysis and linear algebra at the level of MATH 4130 and MATH 4310.
+FA25-MATH-4130-1,FA25-MATH-6260-1,or_group,0.6000000000000001,MATH 4130-MATH 4140 or equivalent.
+FA25-MATH-6310-1,FA25-MATH-6330-1,or_group_or_permission,0.6000000000000001,"MATH 6310-MATH 6320, or permission of instructor."
+FA25-MATH-4330-1,FA25-MATH-6390-1,or_group,0.7,"basic knowledge of algebra and linear algebra at the honors level (e.g., MATH 4330-MATH 4340)."
+FA25-MATH-4410-1,FA25-MATH-6410-1,mandatory_or_permission,0.6000000000000001,MATH 4410 or permission of instructor.
+FA25-MATH-4130-1,FA25-MATH-6520-1,or_group_or_permission,0.29999999999999993,"strong performance in analysis (e.g., MATH 4130 and/or MATH 4140), linear algebra (e.g., MATH 4310), and point-set topology (e.g., MATH 4530), or permission of instructor."
+FA25-MATH-4310-1,FA25-MATH-6520-1,or_group_or_permission,0.29999999999999993,"strong performance in analysis (e.g., MATH 4130 and/or MATH 4140), linear algebra (e.g., MATH 4310), and point-set topology (e.g., MATH 4530), or permission of instructor."
+FA25-MATH-4530-1,FA25-MATH-6520-1,or_group_or_permission,0.29999999999999993,"strong performance in analysis (e.g., MATH 4130 and/or MATH 4140), linear algebra (e.g., MATH 4310), and point-set topology (e.g., MATH 4530), or permission of instructor."
+FA25-MATH-4130-1,FA25-MATH-6710-1,or_group,0.9,"knowledge of Lebesgue integration theory, at least on real line. Students can learn this material by taking MATH 4130-MATH 4140 or MATH 6210."
+FA25-MATH-6210-1,FA25-MATH-6710-1,or_group,0.9,"knowledge of Lebesgue integration theory, at least on real line. Students can learn this material by taking MATH 4130-MATH 4140 or MATH 6210."
+FA25-MATH-6110-1,FA25-MATH-7130-1,or_group_or_permission,0.29999999999999993,"some basic measure theory, Lp spaces, and (basic) functional analysis (e.g., MATH 6110). Advanced undergraduates who have taken MATH 4130-MATH 4140 and linear algebra (e.g., MATH 4310 or MATH 4330), but not MATH 6110, will need permission of instructor."
+FA25-MATH-4130-1,FA25-MATH-7130-1,or_group_or_permission,0.29999999999999993,"some basic measure theory, Lp spaces, and (basic) functional analysis (e.g., MATH 6110). Advanced undergraduates who have taken MATH 4130-MATH 4140 and linear algebra (e.g., MATH 4310 or MATH 4330), but not MATH 6110, will need permission of instructor."
+FA25-MATH-4310-1,FA25-MATH-7130-1,or_group_or_permission,0.29999999999999993,"some basic measure theory, Lp spaces, and (basic) functional analysis (e.g., MATH 6110). Advanced undergraduates who have taken MATH 4130-MATH 4140 and linear algebra (e.g., MATH 4310 or MATH 4330), but not MATH 6110, will need permission of instructor."
+FA25-MATH-4330-1,FA25-MATH-7130-1,or_group_or_permission,0.29999999999999993,"some basic measure theory, Lp spaces, and (basic) functional analysis (e.g., MATH 6110). Advanced undergraduates who have taken MATH 4130-MATH 4140 and linear algebra (e.g., MATH 4310 or MATH 4330), but not MATH 6110, will need permission of instructor."
+FA25-MATH-6710-1,FA25-MATH-7740-1,or_group_or_permission,0.39999999999999997,"basic mathematical statistics (STSCI 6730/MATH 6730 or equivalent) and measure theoretic probability (MATH 6710), or permission of instructor."
+FA25-MATH-1910-1,FA25-PHYS-1112-1,corequisite,0.9,"MATH 1910 or MATH 1120. Recommended corequisite: MATH 1920 in order to continue with PHYS 2213 the following semester. Corequisite: PHYS 1110 must be taken to remain enrolled in PHYS 1112. MATH 1910 may be allowed by instructor in exceptional cases, but continuation in PHYS 2213 will then have to be deferred until MATH 1920 is completed."
+FA25-MATH-1120-1,FA25-PHYS-1112-1,corequisite,0.9,"MATH 1910 or MATH 1120. Recommended corequisite: MATH 1920 in order to continue with PHYS 2213 the following semester. Corequisite: PHYS 1110 must be taken to remain enrolled in PHYS 1112. MATH 1910 may be allowed by instructor in exceptional cases, but continuation in PHYS 2213 will then have to be deferred until MATH 1920 is completed."
+FA25-MATH-1920-1,FA25-PHYS-1112-1,corequisite,0.9,"MATH 1910 or MATH 1120. Recommended corequisite: MATH 1920 in order to continue with PHYS 2213 the following semester. Corequisite: PHYS 1110 must be taken to remain enrolled in PHYS 1112. MATH 1910 may be allowed by instructor in exceptional cases, but continuation in PHYS 2213 will then have to be deferred until MATH 1920 is completed."
+FA25-PHYS-2213-1,FA25-PHYS-1112-1,corequisite,0.9,"MATH 1910 or MATH 1120. Recommended corequisite: MATH 1920 in order to continue with PHYS 2213 the following semester. Corequisite: PHYS 1110 must be taken to remain enrolled in PHYS 1112. MATH 1910 may be allowed by instructor in exceptional cases, but continuation in PHYS 2213 will then have to be deferred until MATH 1920 is completed."
+FA25-PHYS-1110-1,FA25-PHYS-1112-1,corequisite,0.9,"MATH 1910 or MATH 1120. Recommended corequisite: MATH 1920 in order to continue with PHYS 2213 the following semester. Corequisite: PHYS 1110 must be taken to remain enrolled in PHYS 1112. MATH 1910 may be allowed by instructor in exceptional cases, but continuation in PHYS 2213 will then have to be deferred until MATH 1920 is completed."
+FA25-PHYS-1112-1,FA25-PHYS-1112-1,corequisite,0.9,"MATH 1910 or MATH 1120. Recommended corequisite: MATH 1920 in order to continue with PHYS 2213 the following semester. Corequisite: PHYS 1110 must be taken to remain enrolled in PHYS 1112. MATH 1910 may be allowed by instructor in exceptional cases, but continuation in PHYS 2213 will then have to be deferred until MATH 1920 is completed."
+FA25-MATH-1110-1,FA25-PHYS-2207-1,or_group,0.9,"high school physics plus MATH 1110 or MATH 1106, or solid understanding of the basic concepts of introductory calculus."
+FA25-MATH-1106-1,FA25-PHYS-2207-1,or_group,0.9,"high school physics plus MATH 1110 or MATH 1106, or solid understanding of the basic concepts of introductory calculus."
+FA25-PHYS-1110-1,FA25-PHYS-2210-1,mandatory,0.9,PHYS 1110.
+FA25-PHYS-1112-1,FA25-PHYS-2213-1,or_group,0.7,"PHYS 1112 (or strong performance in PHYS 2207) and one of MATH 1920, MATH 2220, or MATH 2240."
+FA25-PHYS-2207-1,FA25-PHYS-2213-1,or_group,0.7,"PHYS 1112 (or strong performance in PHYS 2207) and one of MATH 1920, MATH 2220, or MATH 2240."
+FA25-MATH-1920-1,FA25-PHYS-2213-1,or_group,0.7,"PHYS 1112 (or strong performance in PHYS 2207) and one of MATH 1920, MATH 2220, or MATH 2240."
+FA25-MATH-2220-1,FA25-PHYS-2213-1,or_group,0.7,"PHYS 1112 (or strong performance in PHYS 2207) and one of MATH 1920, MATH 2220, or MATH 2240."
+FA25-PHYS-2213-1,FA25-PHYS-2214-1,or_group,0.7,"PHYS 2213 (or strong performance in PHYS 2208), plus vector calculus at the level of one of the following: MATH 1920, MATH 2220, or MATH 2240."
+FA25-MATH-1920-1,FA25-PHYS-2214-1,or_group,0.7,"PHYS 2213 (or strong performance in PHYS 2208), plus vector calculus at the level of one of the following: MATH 1920, MATH 2220, or MATH 2240."
+FA25-MATH-2220-1,FA25-PHYS-2214-1,or_group,0.7,"PHYS 2213 (or strong performance in PHYS 2208), plus vector calculus at the level of one of the following: MATH 1920, MATH 2220, or MATH 2240."
+FA25-PHYS-1112-1,FA25-PHYS-2216-1,or_group_or_permission,0.6000000000000001,PHYS 1112 or PHYS 2207 or permission of instructor.
+FA25-PHYS-2207-1,FA25-PHYS-2216-1,or_group_or_permission,0.6000000000000001,PHYS 1112 or PHYS 2207 or permission of instructor.
+FA25-PHYS-2214-1,FA25-PHYS-3310-1,or_group,0.9,PHYS 2208 or PHYS 2214 or PHYS 2218.
+FA25-PHYS-2218-1,FA25-PHYS-3310-1,or_group,0.9,PHYS 2208 or PHYS 2214 or PHYS 2218.
+FA25-PHYS-2214-1,FA25-PHYS-3316-1,or_group,0.9,PHYS 2214 or PHYS 2218; PHYS 1116 or PHYS 2216; and coregistration in MATH 2940 or  MATH 2210 or MATH 2230.
+FA25-PHYS-2218-1,FA25-PHYS-3316-1,or_group,0.9,PHYS 2214 or PHYS 2218; PHYS 1116 or PHYS 2216; and coregistration in MATH 2940 or  MATH 2210 or MATH 2230.
+FA25-PHYS-1116-1,FA25-PHYS-3316-1,or_group,0.9,PHYS 2214 or PHYS 2218; PHYS 1116 or PHYS 2216; and coregistration in MATH 2940 or  MATH 2210 or MATH 2230.
+FA25-PHYS-2216-1,FA25-PHYS-3316-1,or_group,0.9,PHYS 2214 or PHYS 2218; PHYS 1116 or PHYS 2216; and coregistration in MATH 2940 or  MATH 2210 or MATH 2230.
+FA25-MATH-2940-1,FA25-PHYS-3316-1,or_group,0.9,PHYS 2214 or PHYS 2218; PHYS 1116 or PHYS 2216; and coregistration in MATH 2940 or  MATH 2210 or MATH 2230.
+FA25-MATH-2210-1,FA25-PHYS-3316-1,or_group,0.9,PHYS 2214 or PHYS 2218; PHYS 1116 or PHYS 2216; and coregistration in MATH 2940 or  MATH 2210 or MATH 2230.
+FA25-MATH-2230-1,FA25-PHYS-3316-1,or_group,0.9,PHYS 2214 or PHYS 2218; PHYS 1116 or PHYS 2216; and coregistration in MATH 2940 or  MATH 2210 or MATH 2230.
+FA25-PHYS-3316-1,FA25-PHYS-3317-1,mandatory,0.9,PHYS 3316.
+FA25-PHYS-2217-1,FA25-PHYS-3327-1,corequisite,0.7,"PHYS 2217/PHYS 2218, or PHYS 2213/PHYS 2214. Recommended prerequisite: AEP 3200. Corequisite: AEP 4200 or appropriate mathematics course(s) that cover complex analysis, vector calculus, Fourier transforms and techniques for studying boundary value problems recommended."
+FA25-PHYS-2218-1,FA25-PHYS-3327-1,corequisite,0.7,"PHYS 2217/PHYS 2218, or PHYS 2213/PHYS 2214. Recommended prerequisite: AEP 3200. Corequisite: AEP 4200 or appropriate mathematics course(s) that cover complex analysis, vector calculus, Fourier transforms and techniques for studying boundary value problems recommended."
+FA25-PHYS-2213-1,FA25-PHYS-3327-1,corequisite,0.7,"PHYS 2217/PHYS 2218, or PHYS 2213/PHYS 2214. Recommended prerequisite: AEP 3200. Corequisite: AEP 4200 or appropriate mathematics course(s) that cover complex analysis, vector calculus, Fourier transforms and techniques for studying boundary value problems recommended."
+FA25-PHYS-2214-1,FA25-PHYS-3327-1,corequisite,0.7,"PHYS 2217/PHYS 2218, or PHYS 2213/PHYS 2214. Recommended prerequisite: AEP 3200. Corequisite: AEP 4200 or appropriate mathematics course(s) that cover complex analysis, vector calculus, Fourier transforms and techniques for studying boundary value problems recommended."
+FA25-PHYS-3327-1,FA25-PHYS-4410-1,mandatory,0.9,"PHYS 3327, PHYS 3318."
+FA25-PHYS-1116-1,FA25-PHYS-4445-1,or_group,0.8,classical mechanics at the level of PHYS 3318 and special relativity at the level of PHYS 1116 or PHYS 2216. Electromagnetism at the level of PHYS 3327 is useful.
+FA25-PHYS-2216-1,FA25-PHYS-4445-1,or_group,0.8,classical mechanics at the level of PHYS 3318 and special relativity at the level of PHYS 1116 or PHYS 2216. Electromagnetism at the level of PHYS 3327 is useful.
+FA25-PHYS-3327-1,FA25-PHYS-4445-1,or_group,0.8,classical mechanics at the level of PHYS 3318 and special relativity at the level of PHYS 1116 or PHYS 2216. Electromagnetism at the level of PHYS 3327 is useful.
+FA25-PHYS-4484-1,FA25-PHYS-4485-1,corequisite,0.6000000000000001,"previous enrollment in course to be taught or equivalent, and concurrent or previous enrollment in PHYS 4484."
+FA25-PHYS-1101-1,FA25-PHYS-4486-1,or_group,0.8,"minimum grade of A in PHYS 1101/PHYS 1102/PHYS 2207/PHYS 2208, or A- in PHYS 1112/PHYS 2213, or B+ in PHYS 1116/PHYS 2217, or comparable AP or transfer credit."
+FA25-PHYS-2207-1,FA25-PHYS-4486-1,or_group,0.8,"minimum grade of A in PHYS 1101/PHYS 1102/PHYS 2207/PHYS 2208, or A- in PHYS 1112/PHYS 2213, or B+ in PHYS 1116/PHYS 2217, or comparable AP or transfer credit."
+FA25-PHYS-1112-1,FA25-PHYS-4486-1,or_group,0.8,"minimum grade of A in PHYS 1101/PHYS 1102/PHYS 2207/PHYS 2208, or A- in PHYS 1112/PHYS 2213, or B+ in PHYS 1116/PHYS 2217, or comparable AP or transfer credit."
+FA25-PHYS-2213-1,FA25-PHYS-4486-1,or_group,0.8,"minimum grade of A in PHYS 1101/PHYS 1102/PHYS 2207/PHYS 2208, or A- in PHYS 1112/PHYS 2213, or B+ in PHYS 1116/PHYS 2217, or comparable AP or transfer credit."
+FA25-PHYS-1116-1,FA25-PHYS-4486-1,or_group,0.8,"minimum grade of A in PHYS 1101/PHYS 1102/PHYS 2207/PHYS 2208, or A- in PHYS 1112/PHYS 2213, or B+ in PHYS 1116/PHYS 2217, or comparable AP or transfer credit."
+FA25-PHYS-2217-1,FA25-PHYS-4486-1,or_group,0.8,"minimum grade of A in PHYS 1101/PHYS 1102/PHYS 2207/PHYS 2208, or A- in PHYS 1112/PHYS 2213, or B+ in PHYS 1116/PHYS 2217, or comparable AP or transfer credit."
+FA25-PHYS-4454-1,FA25-PHYS-7635-1,prerequisite,0.6,"undergraduate statistical mechanics, and familiarity with graduate-level quantum mechanics. Recommended prerequisite: comprehensive undergraduate solid-state physics course (e.g., PHYS 4454)."
+FA25-PHYS-6572-1,FA25-PHYS-7651-1,corequisite,0.7,"PHYS 6572, and PHYS 6561 (one of these courses may be taken concurrently)."
+FA25-PHYS-6561-1,FA25-PHYS-7651-1,corequisite,0.7,"PHYS 6572, and PHYS 6561 (one of these courses may be taken concurrently)."

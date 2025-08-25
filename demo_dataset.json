@@ -1,0 +1,261 @@
+{
+  "demo_profiles": [
+    {
+      "profile_id": "demo_cs_sophomore",
+      "student_id": "demo_cs_2027",
+      "name": "Alex Chen",
+      "major": "Computer Science", 
+      "year": "sophomore",
+      "completed_courses": [
+        "CS 1110",
+        "CS 2110", 
+        "MATH 1910",
+        "MATH 1920",
+        "PHYS 1112",
+        "CS 2800"
+      ],
+      "current_courses": [
+        "CS 3110",
+        "CS 2850"
+      ],
+      "interests": [
+        "Machine Learning",
+        "Software Engineering",
+        "Systems Programming"
+      ],
+      "schedule_constraints": {
+        "preferred_times": ["10:00-12:00", "14:00-16:00"],
+        "avoid_times": ["08:00-09:00", "17:00-18:00"]
+      },
+      "target_courses": [
+        {
+          "course": "CS 4780", 
+          "reason": "ML fundamentals for career goals",
+          "conflicts_with": "CS 4820",
+          "time_slot": "MWF 14:25-15:15",
+          "expected_difficulty": "high",
+          "backup_options": ["CS 4701", "CS 4740"]
+        },
+        {
+          "course": "CS 4820",
+          "reason": "Algorithms for technical interviews", 
+          "conflicts_with": "CS 4780",
+          "time_slot": "MWF 14:25-15:15",
+          "expected_difficulty": "very_high",
+          "fills_fast": true,
+          "backup_options": ["CS 4810", "CS 3758"]
+        }
+      ]
+    },
+    {
+      "profile_id": "demo_ece_junior", 
+      "student_id": "demo_ece_2026",
+      "name": "Maria Rodriguez",
+      "major": "Electrical and Computer Engineering",
+      "year": "junior",
+      "completed_courses": [
+        "CS 1110",
+        "MATH 1910", 
+        "MATH 1920",
+        "MATH 2940",
+        "PHYS 1112",
+        "PHYS 2213", 
+        "ECE 2100",
+        "ECE 2300",
+        "ECE 3140"
+      ],
+      "current_courses": [
+        "ECE 4750",
+        "CS 3110"
+      ],
+      "interests": [
+        "Computer Architecture", 
+        "Digital Systems",
+        "VLSI Design"
+      ],
+      "schedule_constraints": {
+        "preferred_times": ["09:00-11:00", "13:00-15:00"],
+        "avoid_times": ["16:00-18:00"],
+        "lab_conflicts": ["Tuesday 14:00-17:00", "Thursday 14:00-17:00"]
+      },
+      "target_courses": [
+        {
+          "course": "ECE 5760",
+          "reason": "Advanced digital systems design",
+          "conflicts_with": "CS 4420", 
+          "time_slot": "TR 11:40-12:55",
+          "expected_difficulty": "high",
+          "backup_options": ["ECE 4760", "ECE 5725"]
+        },
+        {
+          "course": "CS 4420",
+          "reason": "Computer systems knowledge for ECE",
+          "conflicts_with": "ECE 5760",
+          "time_slot": "TR 11:40-12:55", 
+          "expected_difficulty": "medium",
+          "fills_fast": true,
+          "backup_options": ["CS 4410", "CS 3410"]
+        }
+      ]
+    },
+    {
+      "profile_id": "demo_math_senior",
+      "student_id": "demo_math_2025", 
+      "name": "David Kim",
+      "major": "Mathematics",
+      "year": "senior",
+      "completed_courses": [
+        "MATH 1910",
+        "MATH 1920", 
+        "MATH 2210",
+        "MATH 2220",
+        "MATH 2230",
+        "MATH 2940",
+        "MATH 3110",
+        "MATH 4130",
+        "MATH 4140",
+        "CS 1110",
+        "CS 2110",
+        "PHYS 1112"
+      ],
+      "current_courses": [
+        "MATH 4180",
+        "MATH 4810"
+      ],
+      "interests": [
+        "Applied Mathematics",
+        "Statistics", 
+        "Data Science",
+        "Financial Mathematics"
+      ],
+      "schedule_constraints": {
+        "preferred_times": ["10:00-12:00", "15:00-17:00"],
+        "avoid_times": ["08:00-10:00"],
+        "thesis_meetings": ["Friday 13:00-15:00"]
+      },
+      "target_courses": [
+        {
+          "course": "MATH 4710",
+          "reason": "Statistical theory for graduate school preparation",
+          "conflicts_with": "CS 4780",
+          "time_slot": "MWF 10:10-11:00", 
+          "expected_difficulty": "medium",
+          "backup_options": ["MATH 4720", "MATH 6710"]
+        },
+        {
+          "course": "CS 4780", 
+          "reason": "Machine learning applications in mathematics",
+          "conflicts_with": "MATH 4710",
+          "time_slot": "MWF 10:10-11:00",
+          "expected_difficulty": "high",
+          "fills_fast": true,
+          "backup_options": ["CS 4701", "CS 4740", "ORIE 4741"]
+        }
+      ]
+    }
+  ],
+  "demo_scenarios": [
+    {
+      "scenario_id": "schedule_conflict_resolution",
+      "description": "Student has two high-priority courses at the same time",
+      "profile": "demo_cs_sophomore", 
+      "query": "I want to take both CS 4780 and CS 4820 next semester, but I think they conflict. What should I do?",
+      "expected_outcomes": [
+        "Identify time conflict between courses",
+        "Suggest backup options for one course",
+        "Recommend enrollment strategy based on waitlist probability", 
+        "Explain difficulty trade-offs between options"
+      ]
+    },
+    {
+      "scenario_id": "early_fill_course_strategy",
+      "description": "Course that fills quickly requires strategic enrollment timing",
+      "profile": "demo_ece_junior",
+      "query": "When should I register for CS 4420? I heard it fills up really fast.",
+      "expected_outcomes": [
+        "Provide enrollment probability analysis",
+        "Suggest optimal registration time window",
+        "Recommend backup courses in case of waitlist",
+        "Explain professor ratings and difficulty"
+      ]
+    },
+    {
+      "scenario_id": "cross_major_planning",
+      "description": "Math major wants CS course for interdisciplinary goals", 
+      "profile": "demo_math_senior",
+      "query": "As a math major, should I take CS 4780 or stick with MATH 4710 for my stats background?",
+      "expected_outcomes": [
+        "Compare courses for math major's goals",
+        "Explain prerequisite satisfaction",
+        "Recommend based on graduate school preparation",
+        "Suggest enrollment timing strategy"
+      ]
+    }
+  ],
+  "predictable_course_data": {
+    "CS 4780": {
+      "enrollment_pattern": "fills_by_day_3",
+      "waitlist_probability": 0.75,
+      "professor": "Prof. Johnson",
+      "rating": 4.2,
+      "difficulty": "high"
+    },
+    "CS 4820": {
+      "enrollment_pattern": "fills_by_day_1", 
+      "waitlist_probability": 0.95,
+      "professor": "Prof. Williams",
+      "rating": 4.7,
+      "difficulty": "very_high"
+    },
+    "CS 4420": {
+      "enrollment_pattern": "fills_by_hour_12",
+      "waitlist_probability": 0.85, 
+      "professor": "Prof. Davis",
+      "rating": 4.0,
+      "difficulty": "medium"
+    },
+    "MATH 4710": {
+      "enrollment_pattern": "gradual_fill",
+      "waitlist_probability": 0.15,
+      "professor": "Prof. Anderson", 
+      "rating": 3.8,
+      "difficulty": "medium"
+    },
+    "ECE 5760": {
+      "enrollment_pattern": "fills_by_week_1",
+      "waitlist_probability": 0.60,
+      "professor": "Prof. Martinez",
+      "rating": 4.5,
+      "difficulty": "high"
+    }
+  },
+  "golden_path_script": {
+    "description": "Deterministic demo sequence for consistent results",
+    "steps": [
+      {
+        "step": 1,
+        "action": "Load demo_cs_sophomore profile",
+        "expected_response_time": "<500ms",
+        "success_criteria": "Profile loads with completed courses display"
+      },
+      {
+        "step": 2, 
+        "action": "Ask: 'What CS courses should I take next semester?'",
+        "expected_response_time": "<2s",
+        "success_criteria": "Recommendations include CS 4780, CS 4820 with conflict detection"
+      },
+      {
+        "step": 3,
+        "action": "Ask: 'I want both CS 4780 and CS 4820, what should I do?'",
+        "expected_response_time": "<2s", 
+        "success_criteria": "Conflict identified, backup plan suggested, waitlist probabilities shown"
+      },
+      {
+        "step": 4,
+        "action": "Check provenance display shows professor selection reasons",
+        "expected_response_time": "immediate",
+        "success_criteria": "Selection criteria badges visible (e.g. 'Most reviews, then rating')"
+      }
+    ]
+  }
+}

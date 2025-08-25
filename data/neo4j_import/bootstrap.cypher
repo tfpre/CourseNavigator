@@ -1,0 +1,1 @@
+CREATE INDEX course_cluster IF NOT EXISTS FOR (c:Course) ON (c.clusterId);

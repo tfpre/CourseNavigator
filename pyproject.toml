@@ -57,7 +57,7 @@ beautifulsoup4 = "^4.12.3"  # For professor intelligence scraping
 lxml = "^5.2.2"  # Fast XML/HTML parser for BeautifulSoup
 
 # --- Caching & Redis ---
-redis = {extras = ["hiredis"], version = "^5.0.7"}  # Async Redis client with performance extras
+redis = {extras = ["hiredis", "async"], version = "^5.0.7"}  # Async Redis client with performance extras
 
 # --- Visualization ---
 matplotlib = "^3.10.3"
@@ -67,11 +67,13 @@ seaborn = "^0.13.2"
 # It can be added back if your own code requires it directly.
 # This prevents potential conflicts with dependencies from other libraries (e.g., fastapi's starlette).
 psutil = "^7.0.0"
+prometheus-client = "^0.20.0"
 
 [tool.poetry.group.dev.dependencies]
 # --- Testing & Code Quality ---
 pytest = "^8.3.2"
 pytest-asyncio = "^1.0.0"
+fakeredis = ">=2.23.2"
 black = "^24.4.2" # Using a stable, widely-adopted style.
 ruff = "^0.5.5"
 mypy = "^1.11.0"

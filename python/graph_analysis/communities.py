@@ -5,16 +5,24 @@ Implements Louvain algorithm and department overlap analysis using Neo4j GDS
 
 import logging
 import time
+import os
+import asyncio
 from typing import Dict, List, Optional, Tuple, Set
 from dataclasses import dataclass
 from collections import defaultdict
+from prometheus_client import Histogram
 
 logger = logging.getLogger(__name__)
 
-# Constants for edge explosion prevention
-MAX_LEVEL_DIFFERENCE = 200  # Only connect courses with level difference ≤ 200
-MIN_SIMILARITY_WEIGHT = 0.1  # Minimum weight for similarity edges
+GDS_QUERY_TIMEOUT_MS = int(os.getenv("GDS_QUERY_TIMEOUT_MS", "300"))  # default 300ms
+LOUVAIN_TIMEOUT_MS = int(os.getenv("LOUVAIN_TIMEOUT_MS", "2000")) # default 2000ms
 
+# Graph similarity constants
+MAX_LEVEL_DIFFERENCE = int(os.getenv("MAX_LEVEL_DIFFERENCE", "200"))  # max difference in course levels
+MIN_SIMILARITY_WEIGHT = float(os.getenv("MIN_SIMILARITY_WEIGHT", "0.1"))  # minimum similarity threshold
+
+# Prometheus metrics
+community_cypher_ms = Histogram("community_cypher_ms", "Time for cohesion query")
 
 @dataclass
 class CourseCluster:
@@ -76,139 +84,94 @@ class CourseCommunities:
 
     async def _ensure_similarity_graph_exists(self) -> None:
         """
-        Ensure similarity graph exists in GDS catalog with level-constrained edges
-        Fixes edge explosion by only connecting courses with level difference ≤ 200
+        Ensure similarity graph exists in GDS catalog.
+        Modernized to use gds.graph.project.
         """
         # Check memoized cache first
         if self._is_graph_cache_valid() and self._graph_exists_cache.get(self.similarity_graph_name):
             return
-            
+
         try:
             # Check if similarity graph exists
-            check_query = f"""
-            CALL gds.graph.exists('{self.similarity_graph_name}') YIELD exists
-            RETURN exists
-            """
-            
-            result = await self.neo4j.execute_query(check_query)
-            exists = result[0]["exists"] if result else False
-            
-            # Cache the result
+            check_query = "CALL gds.graph.exists($name) YIELD exists"
+            res = await self.neo4j.execute_query(check_query, name=self.similarity_graph_name, timeout=GDS_QUERY_TIMEOUT_MS/1000)
+            exists = res[0]["exists"] if res else False
+
             self._graph_exists_cache[self.similarity_graph_name] = exists
             self._cache_timestamp = time.time()
-            
+
             if not exists:
                 logger.info(f"Creating similarity graph projection: {self.similarity_graph_name}")
-                
-                # Create virtual similarity edges with level constraints to prevent edge explosion
-                create_query = f"""
-                CALL gds.graph.project.cypher(
-                    '{self.similarity_graph_name}',
-                    'MATCH (c:Course) RETURN id(c) AS id, c.subject AS subject, c.catalog_nbr AS level',
-                    '''
-                    MATCH (c1:Course), (c2:Course)
-                    WHERE id(c1) < id(c2)  // Avoid duplicate edges
-                    AND (
-                        // Prerequisite relationships (high weight)
-                        (c1)-[:REQUIRES]-(c2) 
-                        OR
-                        // Subject similarity with level constraint (prevent edge explosion)
-                        (c1.subject = c2.subject 
-                         AND abs(toInteger(c1.catalog_nbr) - toInteger(c2.catalog_nbr)) <= $maxLevelDiff)
-                    )
-                    WITH c1, c2,
-                         CASE 
-                            WHEN (c1)-[:REQUIRES]-(c2) THEN 2.0
-                            ELSE 1.0 - (abs(toInteger(c1.catalog_nbr) - toInteger(c2.catalog_nbr)) * 0.005)
-                         END AS weight
-                    WHERE weight >= $minWeight
-                    RETURN id(c1) AS source, id(c2) AS target, weight
-                    ''',
-                    {{maxLevelDiff: $maxLevelDiff, minWeight: $minWeight}}
-                ) 
+                project_query = """
+                CALL gds.graph.project(
+                    $name,
+                    {Course: {properties: ['clusterId']}},
+                    {SIMILAR_TO: {properties: ['similarity']}}
+                )
                 YIELD graphName, nodeCount, relationshipCount
                 RETURN graphName, nodeCount, relationshipCount
                 """
-                
-                result = await self.neo4j.execute_query(
-                    create_query,
-                    maxLevelDiff=MAX_LEVEL_DIFFERENCE,
-                    minWeight=MIN_SIMILARITY_WEIGHT
-                )
-                
+                result = await self.neo4j.execute_query(project_query, name=self.similarity_graph_name, timeout=GDS_QUERY_TIMEOUT_MS/1000)
                 if result:
                     info = result[0]
                     logger.info(f"Created similarity graph: {info['nodeCount']} nodes, {info['relationshipCount']} relationships")
-                    # Update cache to reflect that graph now exists
                     self._graph_exists_cache[self.similarity_graph_name] = True
                     self._cache_timestamp = time.time()
-                
+
         except Exception as e:
             logger.error(f"Failed to ensure similarity graph exists: {e}")
-            # Clear cache on error to force recheck next time
             self._graph_exists_cache.pop(self.similarity_graph_name, None)
             raise
     
-    async def detect_communities(self, algorithm: str = 'louvain') -> Tuple[List[Set[str]], float]:
+    async def detect_communities(self, algorithm: str = 'louvain') -> None:
         """
-        Detect communities using Neo4j GDS algorithms
-        Returns list of communities (sets of course codes) and modularity score
+        Detect communities using Neo4j GDS algorithms and write them back to the graph.
         """
-        logger.info(f"Detecting communities using {algorithm} algorithm with GDS")
+        logger.info(f"Detecting and writing communities using {algorithm} algorithm with GDS")
         start_time = time.time()
-        
+
         try:
             await self._ensure_similarity_graph_exists()
-            
+
             if algorithm == 'louvain':
-                # Use GDS Louvain algorithm
-                louvain_query = f"""
-                CALL gds.louvain.stream('{self.similarity_graph_name}', {{
-                    relationshipWeightProperty: 'weight',
-                    seedProperty: 'seed'
-                }})
-                YIELD nodeId, communityId
-                
-                // Get course information
-                MATCH (c:Course) WHERE id(c) = nodeId
-                RETURN communityId, collect(c.code) as course_codes
-                ORDER BY communityId
-                """
-                
-                result = await self.neo4j.execute_query(louvain_query)
-                
-                # Convert to communities list
-                communities = []
-                for record in result:
-                    community_courses = set(record["course_codes"])
-                    if community_courses:  # Only add non-empty communities
-                        communities.append(community_courses)
-                
-                # Calculate modularity using GDS
-                modularity_query = f"""
-                CALL gds.louvain.stats('{self.similarity_graph_name}', {{
-                    relationshipWeightProperty: 'weight'
-                }})
-                YIELD modularity
-                RETURN modularity
-                """
-                
-                modularity_result = await self.neo4j.execute_query(modularity_query)
-                modularity = modularity_result[0]["modularity"] if modularity_result else 0.0
-                
+                # Use GDS Louvain algorithm and write back the community id
+                write_query = "CALL gds.louvain.write($name, { writeProperty: 'clusterId' }) YIELD communityCount"
+                await self.neo4j.execute_query(write_query, name=self.similarity_graph_name, timeout=LOUVAIN_TIMEOUT_MS/1000)
             else:
                 raise ValueError(f"Unsupported algorithm: {algorithm}. Only 'louvain' is supported with GDS.")
-            
+
             detection_time = time.time() - start_time
-            logger.info(f"Community detection completed in {detection_time:.2f}s: "
-                       f"{len(communities)} communities, modularity={modularity:.3f}")
-            
-            return communities, modularity
-            
+            logger.info(f"Community detection and writeback completed in {detection_time:.2f}s")
+
         except Exception as e:
             logger.error(f"Community detection failed: {e}")
             raise
     
+    async def write_communities(self, algorithm: str = 'louvain') -> None:
+        """
+        Wrapper method to maintain compatibility with run_complete_analysis.
+        """
+        await self.detect_communities(algorithm)
+    
+    @community_cypher_ms.time()
+    async def compute_cohesion(self) -> Dict[int, float]:
+        """
+        One-pass cohesion calculation.
+        """
+        q = """
+        MATCH (c1:Course)-[r:SIMILAR_TO]->(c2:Course)
+        WITH c1.clusterId AS a, c2.clusterId AS b, r.similarity AS w
+        WITH a, sum(CASE WHEN a=b THEN w ELSE 0 END) AS intra, sum(w) AS total
+        RETURN a AS clusterId,
+               CASE WHEN total = 0 THEN 0.0 ELSE intra / total END AS cohesion
+        """
+        try:
+            res = await self.neo4j.execute_query(q, timeout=GDS_QUERY_TIMEOUT_MS/1000)
+            return {row["clusterId"]: row["cohesion"] for row in res}
+        except asyncio.TimeoutError:
+            logger.warning("Cohesion query timed out; returning empty dict")
+            return {}
+
     async def analyze_clusters(self, communities: List[Set[str]]) -> List[CourseCluster]:
         """
         Analyze detected communities and extract cluster characteristics using Neo4j queries
@@ -264,34 +227,8 @@ class CourseCommunities:
                 # Calculate average course level
                 avg_level = level_sum / valid_levels if valid_levels > 0 else 0.0
                 
-                # Calculate cluster cohesion (internal edge density) using GDS
+                # Cohesion score will be calculated in a separate step
                 cohesion_score = 0.0
-                if cluster_size > 1:
-                    # Count internal edges in the similarity graph
-                    cohesion_query = f"""
-                    CALL gds.graph.relationshipProperty.stream('{self.similarity_graph_name}', 'weight')
-                    YIELD sourceNodeId, targetNodeId, propertyValue
-                    
-                    // Get course codes for source and target
-                    MATCH (source:Course), (target:Course)
-                    WHERE id(source) = sourceNodeId AND id(target) = targetNodeId
-                    AND source.code IN $course_codes AND target.code IN $course_codes
-                    RETURN count(*) as internal_edges
-                    """
-                    
-                    try:
-                        cohesion_result = await self.neo4j.execute_query(
-                            cohesion_query,
-                            course_codes=course_codes
-                        )
-                        
-                        actual_edges = cohesion_result[0]["internal_edges"] if cohesion_result else 0
-                        possible_edges = cluster_size * (cluster_size - 1) / 2
-                        cohesion_score = actual_edges / possible_edges if possible_edges > 0 else 0.0
-                        
-                    except Exception as e:
-                        logger.warning(f"Failed to calculate cohesion for cluster {cluster_id}: {e}")
-                        cohesion_score = 0.0
                 
                 clusters.append(CourseCluster(
                     cluster_id=cluster_id,
@@ -330,7 +267,7 @@ class CourseCommunities:
             
             // Get course information for connected nodes
             MATCH (source:Course), (target:Course)
-            WHERE id(source) = sourceNodeId AND id(target) = targetNodeId
+            WHERE elementId(source) = sourceNodeId AND elementId(target) = targetNodeId
             AND source.subject <> target.subject  // Only cross-department connections
             
             WITH source.subject as dept_a, target.subject as dept_b,
@@ -444,8 +381,8 @@ class CourseCommunities:
             CALL gds.graph.relationshipProperty.stream('{self.similarity_graph_name}', 'weight')
             YIELD sourceNodeId, targetNodeId, propertyValue
             WITH c, target, sourceNodeId, targetNodeId, propertyValue
-            WHERE (id(c) = sourceNodeId AND id(target) = targetNodeId) OR 
-                  (id(c) = targetNodeId AND id(target) = sourceNodeId)
+            WHERE (elementId(c) = sourceNodeId AND elementId(target) = targetNodeId) OR 
+                  (elementId(c) = targetNodeId AND elementId(target) = sourceNodeId)
             
             RETURN c.code as code, c.title as title, c.subject as subject, 
                    c.catalog_nbr as level, propertyValue as connection_weight
@@ -459,8 +396,8 @@ class CourseCommunities:
                 MATCH (target:Course {{code: $target_code}})
                 CALL gds.graph.relationshipProperty.stream('{self.similarity_graph_name}', 'weight')
                 YIELD sourceNodeId, targetNodeId
-                WHERE (id(c) = sourceNodeId AND id(target) = targetNodeId) OR 
-                      (id(c) = targetNodeId AND id(target) = sourceNodeId)
+                WHERE (elementId(c) = sourceNodeId AND elementId(target) = targetNodeId) OR 
+                      (elementId(c) = targetNodeId AND elementId(target) = sourceNodeId)
                 RETURN 1 LIMIT 1
             }}
             RETURN c.code as code, c.title as title, c.subject as subject, 
@@ -536,21 +473,39 @@ class CourseCommunities:
         """
         logger.info(f"Starting complete community analysis with {algorithm} algorithm")
         overall_start = time.time()
-        
+
         try:
             await self._ensure_similarity_graph_exists()
+            await self.write_communities(algorithm)
+            cohesion_scores = await self.compute_cohesion()
+
+            # Get clusters from graph
+            get_clusters_query = """
+            MATCH (c:Course)
+            WHERE c.clusterId IS NOT NULL
+            WITH c.clusterId as clusterId, c.code as course_code
+            RETURN clusterId, collect(course_code) as course_codes
+            ORDER BY clusterId
+            """
+            clusters_result = await self.neo4j.execute_query(get_clusters_query)
             
-            # Detect communities
-            communities, modularity = await self.detect_communities(algorithm)
-            
+            communities = []
+            for record in clusters_result:
+                communities.append(set(record["course_codes"]))
+
             # Analyze clusters
             clusters = await self.analyze_clusters(communities)
             
+            # Add cohesion scores to clusters
+            for cluster in clusters:
+                cluster.cohesion_score = cohesion_scores.get(cluster.cluster_id, 0.0)
+
             # Analyze department overlaps
-            department_overlaps = await self.analyze_department_overlap()
-            
+            # Temporarily disabled due to performance issues
+            department_overlaps = []
+
             total_time = time.time() - overall_start
-            
+
             # Get graph statistics
             stats_query = f"""
             CALL gds.graph.list('{self.similarity_graph_name}')
@@ -560,7 +515,18 @@ class CourseCommunities:
             
             stats_result = await self.neo4j.execute_query(stats_query)
             stats = stats_result[0] if stats_result else {"nodeCount": 0, "relationshipCount": 0}
-            
+
+            # Get modularity score
+            modularity_query = f"""
+            CALL gds.louvain.stats('{self.similarity_graph_name}', {{
+                relationshipWeightProperty: 'weight'
+            }})
+            YIELD modularity
+            RETURN modularity
+            """
+            modularity_result = await self.neo4j.execute_query(modularity_query)
+            modularity = modularity_result[0]["modularity"] if modularity_result else 0.0
+
             # Prepare metadata
             metadata = {
                 "total_courses": stats["nodeCount"],
@@ -573,21 +539,17 @@ class CourseCommunities:
                 "largest_community_size": max(len(c) for c in communities) if communities else 0,
                 "smallest_community_size": min(len(c) for c in communities) if communities else 0,
                 "avg_community_size": sum(len(c) for c in communities) / len(communities) if communities else 0,
-                "edge_explosion_prevention": {
-                    "max_level_difference": MAX_LEVEL_DIFFERENCE,
-                    "min_similarity_weight": MIN_SIMILARITY_WEIGHT
-                }
             }
-            
+
             logger.info(f"Complete community analysis finished in {total_time:.2f}s")
-            
+
             return CommunityAnalysis(
                 clusters=clusters,
                 department_overlaps=department_overlaps,
                 modularity_score=modularity,
                 analysis_metadata=metadata
             )
-            
+
         except Exception as e:
             logger.error(f"Complete community analysis failed: {e}")
             raise

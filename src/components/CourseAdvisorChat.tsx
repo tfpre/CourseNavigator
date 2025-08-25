@@ -56,6 +56,7 @@ const CourseAdvisorChat: React.FC<CourseAdvisorChatProps> = ({
   const [contextInfo, setContextInfo] = useState<string>('');
   const [recommendedCourses, setRecommendedCourses] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [lastResponseProvenance, setLastResponseProvenance] = useState<ChatMessage['provenance'] | null>(null);
   
   // Student profile management
   const [studentProfile, setStudentProfile] = useState<StudentProfile>(
@@ -121,7 +122,8 @@ const CourseAdvisorChat: React.FC<CourseAdvisorChatProps> = ({
           include_professor_ratings: true,
           include_difficulty_info: true,
           include_enrollment_data: true,
-          include_similar_courses: true
+          include_similar_courses: true,
+          include_conflict_detection: true
         },
         stream: true,
         max_recommendations: 5
@@ -211,10 +213,16 @@ const CourseAdvisorChat: React.FC<CourseAdvisorChatProps> = ({
                   role: 'assistant',
                   content: assistantResponse,
                   timestamp: new Date().toISOString(),
-                  metadata: chunk.metadata
+                  metadata: chunk.metadata,
+                  provenance: chunk.metadata.provenance_info || undefined
                 };
 
                 setMessages(prev => [...prev, finalMessage]);
+                
+                // Store provenance for display
+                if (chunk.metadata.provenance_info) {
+                  setLastResponseProvenance(chunk.metadata.provenance_info);
+                }
                 
                 // Update conversation state
                 if (chunk.metadata.conversation_id) {
@@ -412,6 +420,37 @@ const CourseAdvisorChat: React.FC<CourseAdvisorChatProps> = ({
                   </Badge>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Data Provenance Display */}
+          {lastResponseProvenance && lastResponseProvenance.data_freshness && (
+            <div className="border-t pt-3">
+              <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                Data sources used in last response:
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(lastResponseProvenance.data_freshness).map(([source, freshness]) => (
+                  <Badge key={source} variant="secondary" className="text-xs px-2 py-1">
+                    {freshness}
+                  </Badge>
+                ))}
+              </div>
+              
+              {/* Professor Selection Reasons */}
+              {lastResponseProvenance.professor_selections && Object.keys(lastResponseProvenance.professor_selections).length > 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-muted-foreground mb-1">Professor selection criteria:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {Object.entries(lastResponseProvenance.professor_selections).map(([course, reason]) => (
+                      <Badge key={course} variant="outline" className="text-xs px-2 py-1" title={`${course}: ${reason}`}>
+                        {course}: {reason}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -62,6 +62,8 @@ class GraphMetadataService:
                 meta.last_updated = datetime(),
                 meta.etl_source = 'initial'
             
+            WITH meta
+            
             // Get current graph stats
             CALL {
                 MATCH (c:Course) 
@@ -125,6 +127,8 @@ class GraphMetadataService:
             SET meta.version = meta.version + 1,
                 meta.last_updated = datetime(),
                 meta.etl_source = $etl_source
+            
+            WITH meta
             
             // Get updated stats
             CALL {

@@ -1,0 +1,213 @@
+services:
+  # Next.js frontend and API routes
+  nextjs:
+    build: .
+    ports:
+      - "3000:3000"
+    # PRODUCTION FIX: Remove bind mount to enable Docker layer caching
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - FASTAPI_BASE_URL=http://fastapi-gateway:8000
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy  
+      fastapi-gateway:
+        condition: service_healthy
+    # PRODUCTION FIX: Add healthcheck for startup coordination
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # PRODUCTION FIX: Add resource limits for production parity
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+    networks:
+      - course-navigator
+
+  # FastAPI gateway for RAG + Graph queries
+  fastapi-gateway:
+    build:
+      context: python/
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    # PRODUCTION FIX: Remove bind mount to enable Docker layer caching  
+    # volumes:
+    #   - ./python:/app
+    environment:
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USERNAME=neo4j
+      - NEO4J_PASSWORD=password
+      - QDRANT_URL=http://qdrant:6333
+      - REDIS_URL=redis://redis:6379
+      - VLLM_BASE_URL=http://vllm:8000/v1
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ENVIRONMENT=development
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # vLLM is optional - gateway should start even if vLLM fails
+      # vllm:
+      #   condition: service_healthy
+    # PRODUCTION FIX: Add healthcheck for startup coordination
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # PRODUCTION FIX: Add resource limits matching Neo4j free tier constraints
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+    networks:
+      - course-navigator
+
+  # Neo4j graph database
+  neo4j:
+    image: neo4j:5.15-community
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - ./data/neo4j:/var/lib/neo4j/import/course_data
+    environment:
+      - NEO4J_AUTH=neo4j/password
+      - NEO4J_PLUGINS=["apoc","gds"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*,gds.*
+      - NEO4J_dbms_security_procedures_allowlist=apoc.*,gds.*
+    # PRODUCTION FIX: Add healthcheck to prevent startup race conditions
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "password", "RETURN 'Neo4j is ready' as status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    # PRODUCTION FIX: Mirror Neo4j Aura free tier limits (512MB)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+    networks:
+      - course-navigator
+
+  # Qdrant vector database
+  qdrant:
+    image: qdrant/qdrant:v1.7.3
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    # PRODUCTION FIX: Add healthcheck for service coordination
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # PRODUCTION FIX: Add resource limits for consistent performance
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+    networks:
+      - course-navigator
+
+  # vLLM inference server for Llama 3.1-8B-Instruct (upgraded per newfix.md)
+  vllm:
+    image: vllm/vllm-openai:latest
+    ports:
+      - "8002:8000"  # Avoid conflict with FastAPI gateway
+    command: >
+      --model meta-llama/Llama-3.1-8B-Instruct
+      --dtype bfloat16
+      --gpu-memory-utilization 0.85
+      --max-num-seqs 128
+      --max-model-len 4096
+      --enable-chunked-prefill
+      --max-num-batched-tokens 8192
+      --disable-log-requests
+      --served-model-name llama-3.1-8b-instruct
+      --preemption-mode recompute
+      --enforce-eager
+    shm_size: "8gb"  # Increased for larger model
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+        limits:
+          memory: 16G  # Increased memory limit for 8B model
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - VLLM_ATTENTION_BACKEND=FLASHINFER  # Use FlashAttention for better performance
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/v1/models || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 180s  # Longer startup time for 8B model loading
+    restart: unless-stopped  # Auto-restart on failures
+    networks:
+      - course-navigator
+
+  # Redis cache for context optimization
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]  # Memory-only for speed
+    healthcheck:
+      test: ["CMD", "redis-cli", "PING"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 64M
+    networks:
+      - course-navigator
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  qdrant_storage:
+
+networks:
+  course-navigator:
+    driver: bridge

@@ -65,15 +65,21 @@ class ChatBenchmark:
                         return None
                     
                     async for line in response.aiter_lines():
-                        if not line or not line.startswith("data:"):
+                        line = line.strip()
+                        
+                        # Skip empty lines and SSE comments/heartbeats
+                        if not line or line.startswith(':'):
+                            continue  # heartbeat/comment
+                        
+                        if not line.startswith('data:'):
                             continue
                         
-                        if line.strip() == "data: {}":  # Empty close event
+                        payload = line[len('data:'):].strip()
+                        if not payload or payload == '{}':  # Empty close event
                             continue
                         
                         try:
-                            event_data = line[5:]  # Remove "data: " prefix
-                            chunk = json.loads(event_data)
+                            chunk = json.loads(payload)
                             
                             if chunk.get("chunk_type") == "token":
                                 if first_token_time is None:

@@ -245,37 +245,28 @@ class GraphContext:
     
     def _build_similarity_graph_query(self) -> CypherQuery:
         """Build parameterized query for similarity graph (complex Cypher projection)"""
+        # Build relationship query with constants substituted
+        relationship_query = "MATCH (c1:Course), (c2:Course) WHERE elementId(c1) < elementId(c2) AND ((c1)-[:REQUIRES]-(c2) OR (c1.subject = c2.subject AND abs(toInteger(c1.catalog_nbr) - toInteger(c2.catalog_nbr)) <= 200)) WITH c1, c2, CASE WHEN (c1)-[:REQUIRES]-(c2) THEN 2.0 ELSE 1.0 - (abs(toInteger(c1.catalog_nbr) - toInteger(c2.catalog_nbr)) * 0.005) END AS weight WHERE weight >= 0.1 RETURN elementId(c1) AS source, elementId(c2) AS target, weight"
+        
         return CypherQuery(
             query="""
-            CALL gds.graph.project.cypher(
+            CALL gds.graph.project(
                 $graphName,
-                'MATCH (c:Course) RETURN id(c) AS id, c.subject AS subject, c.catalog_nbr AS level',
-                '
-                MATCH (c1:Course), (c2:Course)
-                WHERE id(c1) < id(c2)
-                AND (
-                    (c1)-[:REQUIRES]-(c2) 
-                    OR
-                    (c1.subject = c2.subject 
-                     AND abs(toInteger(c1.catalog_nbr) - toInteger(c2.catalog_nbr)) <= $maxLevelDiff)
-                )
-                WITH c1, c2,
-                     CASE 
-                        WHEN (c1)-[:REQUIRES]-(c2) THEN 2.0
-                        ELSE 1.0 - (abs(toInteger(c1.catalog_nbr) - toInteger(c2.catalog_nbr)) * 0.005)
-                     END AS weight
-                WHERE weight >= $minWeight
-                RETURN id(c1) AS source, id(c2) AS target, weight
-                ',
-                {maxLevelDiff: $maxLevelDiff, minWeight: $minWeight}
+                {
+                    'Course': {}
+                },
+                {
+                    'SIMILAR_TO': {
+                        'type': 'SIMILAR_TO',
+                        'properties': ['weight']
+                    }
+                }
             ) 
             YIELD graphName, nodeCount, relationshipCount
             RETURN graphName, nodeCount, relationshipCount
             """,
             parameters={
                 "graphName": "similarity_graph",
-                "maxLevelDiff": 200,  # MAX_LEVEL_DIFFERENCE
-                "minWeight": 0.1      # MIN_SIMILARITY_WEIGHT
             },
             description="Create similarity graph with level constraints"
         )
@@ -319,50 +310,50 @@ class CentralityQueries:
         Eliminates 3-4 RTTs per analysis, achieving ~40% performance gain
         """
         return CypherQuery(
-            query=f"""
+            query="""
             // Batch all centrality calculations to minimize round-trips
-            CALL {{
-                // PageRank calculation
-                CALL gds.pageRank.stream($graphName, {{
+            WITH 1 as dummy
+            CALL {
+                WITH dummy
+                CALL gds.pageRank.stream($graphName, {
                     dampingFactor: $dampingFactor,
                     maxIterations: $maxIterations,
                     tolerance: 1e-6
-                }})
+                })
                 YIELD nodeId, score
-                WITH collect({{nodeId: nodeId, pagerank_score: score}}) as pagerank_results
-                RETURN pagerank_results
-            }}
-            CALL {{
-                // Betweenness centrality calculation  
+                RETURN collect({nodeId: nodeId, pagerank_score: score}) as pagerank_results
+            }
+            CALL {
+                WITH dummy
                 CALL gds.betweenness.stream($undirectedGraphName)
                 YIELD nodeId, score
                 WHERE score >= $minBetweenness
-                WITH collect({{nodeId: nodeId, betweenness_score: score}}) as betweenness_results
-                RETURN betweenness_results
-            }}
-            CALL {{
-                // Gateway courses (in-degree) calculation
+                RETURN collect({nodeId: nodeId, betweenness_score: score}) as betweenness_results
+            }
+            CALL {
+                WITH dummy
                 MATCH (c:Course)
                 WITH c, size([(c)<-[:REQUIRES]-() | 1]) as in_degree
                 WHERE in_degree >= $minInDegree
-                WITH collect({{nodeId: id(c), in_degree: in_degree}}) as gateway_results
-                RETURN gateway_results
-            }}
-            CALL {{
-                // Course metadata lookup (single batch)
+                RETURN collect({nodeId: elementId(c), in_degree: in_degree}) as gateway_results
+            }
+            CALL {
+                WITH dummy
                 MATCH (c:Course)
-                WITH collect({{
-                    nodeId: id(c),
+                RETURN collect({
+                    nodeId: elementId(c),
                     course_code: c.code,
                     title: c.title,
                     subject: c.subject,
                     level: c.catalog_nbr
-                }}) as course_metadata
-                RETURN course_metadata
-            }}
-            
-            // Combine all results
-            RETURN pagerank_results, betweenness_results, gateway_results, course_metadata
+                }) as course_metadata
+            }
+            RETURN {
+                pagerank_results: pagerank_results,
+                betweenness_results: betweenness_results,
+                gateway_results: gateway_results,
+                course_metadata: course_metadata
+            } as result
             """,
             parameters={
                 "graphName": graph_name,
@@ -383,7 +374,7 @@ class CentralityQueries:
             }})
             YIELD nodeId, score
             
-            MATCH (c:Course) WHERE id(c) = nodeId
+            MATCH (c:Course) WHERE elementId(c) = nodeId
             RETURN c.code as course_code, c.title as title, c.subject as subject, 
                    c.catalog_nbr as level, score
             ORDER BY score DESC
@@ -400,7 +391,7 @@ class CentralityQueries:
             CALL gds.betweenness.stream($graphName)
             YIELD nodeId, score
             
-            MATCH (c:Course) WHERE id(c) = nodeId AND score >= $minBetweenness
+            MATCH (c:Course) WHERE elementId(c) = nodeId AND score >= $minBetweenness
             RETURN c.code as course_code, c.title as title, c.subject as subject, 
                    c.catalog_nbr as level, score
             ORDER BY score DESC
@@ -440,7 +431,7 @@ class CommunityQueries:
             }})
             YIELD nodeId, communityId, intermediateCommunityIds
             
-            MATCH (c:Course) WHERE id(c) = nodeId
+            MATCH (c:Course) WHERE elementId(c) = nodeId
             RETURN c.code as course_code, c.title as title, c.subject as subject,
                    c.catalog_nbr as level, communityId
             ORDER BY communityId, course_code

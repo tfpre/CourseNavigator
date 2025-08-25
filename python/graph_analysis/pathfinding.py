@@ -436,7 +436,7 @@ class PrerequisitePaths:
             # Get course node IDs
             course_id_query = """
             MATCH (c:Course {code: $target_course})
-            RETURN id(c) as target_id
+            RETURN elementId(c) as target_id
             """
             
             target_result = await self.neo4j.execute_query(course_id_query, target_course=target_course)
@@ -451,7 +451,7 @@ class PrerequisitePaths:
                 completed_query = """
                 MATCH (c:Course)
                 WHERE c.code IN $completed_courses
-                RETURN id(c) as node_id, c.code as code
+                RETURN elementId(c) as node_id, c.code as code
                 """
                 
                 completed_result = await self.neo4j.execute_query(
@@ -468,7 +468,7 @@ class PrerequisitePaths:
                 WHERE NOT (c)<-[:REQUIRES]-()
                 WITH c, rand() as random_value
                 ORDER BY random_value
-                RETURN id(c) AS nodeId
+                RETURN elementId(c) AS nodeId
                 LIMIT 10
                 """
                 
@@ -494,7 +494,7 @@ class PrerequisitePaths:
                     
                     // Convert node IDs to course codes
                     UNWIND nodeIds as nodeId
-                    MATCH (c:Course) WHERE id(c) = nodeId
+                    MATCH (c:Course) WHERE elementId(c) = nodeId
                     RETURN collect(c.code) as path_codes, totalCost
                     """
                     
@@ -539,7 +539,7 @@ class PrerequisitePaths:
                         
                         // Convert node IDs to course codes
                         UNWIND nodeIds as nodeId
-                        MATCH (c:Course) WHERE id(c) = nodeId
+                        MATCH (c:Course) WHERE elementId(c) = nodeId
                         WITH path, totalCost, collect(c.code) as path_codes
                         RETURN path_codes, totalCost
                         ORDER BY totalCost

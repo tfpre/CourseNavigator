@@ -13,7 +13,7 @@ from ..models import (
     ChatRequest, ChatResponse, ChatContext, ChatStreamChunk, 
     StudentProfile, ConversationState, ConversationMessage,
     ContextSource, TokenBudget, ErrorDetail, PrerequisitePathRequest,
-    ChatResponseJSON, Recommendation, CourseCode
+    ChatResponseJSON, Recommendation, CourseCode, ChatAdvisorResponse
 )
 from .vector_service import VectorService
 from .graph_service import GraphService
@@ -21,11 +21,47 @@ from .rag_service import RAGService
 from .professor_intelligence_service import ProfessorIntelligenceService
 from .course_difficulty_service import CourseDifficultyService
 from .enrollment_prediction_service import EnrollmentPredictionService
+from .grades_service import GradesService
+from .student_profile_service import StudentProfileService
+from .schedule_fit_service import ScheduleFitService, ProfilePrefs
+from .major_requirements_service import MajorRequirementsService
+from .conflict_detection_service import ConflictDetectionService
 from .llm_router import LLMRouter
 from .token_budget import TokenBudgetManager
 from .tag_cache import ContextCache
+from ..utils.schema_enforcer import enforce_with_retry, validate_reask_result, JSONEnforceError
+from prometheus_client import Counter, Histogram
 
 logger = logging.getLogger(__name__)
+
+try:
+    redis_hit = Counter("conversation_state_redis_hit_total", "Redis hits for conversation state")
+    redis_miss = Counter("conversation_state_redis_miss_total", "Redis misses for conversation state")
+    
+    # Enhanced JSON Schema Enforcement Metrics
+    json_pass_total = Counter("json_pass_total", "Valid JSON on first try")
+    json_retry_pass_total = Counter("json_retry_pass_total", "Valid JSON after one retry")
+    json_fail_total = Counter("json_fail_total", "Still invalid after retry")
+    json_enforce_ms = Histogram("json_enforce_ms", "End-to-end JSON enforcement time (ms)",
+                               buckets=(50, 100, 200, 400, 800, 1600, 3200))
+    
+    # Legacy metrics for compatibility
+    json_validations_total = Counter("json_validations_total", "JSON validation attempts", ["result"])
+    json_reask_total = Counter("json_reask_total", "JSON re-ask attempts")
+    json_fallback_total = Counter("json_fallback_total", "JSON fallback invocations")
+    
+    # Performance and reliability metrics
+    chat_request_duration_seconds = Histogram("chat_request_duration_seconds", "Chat request latency", 
+                                            buckets=(0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0))
+    sse_stream_errors_total = Counter("sse_stream_errors_total", "SSE streaming failures", ["error_type"])
+    sse_chunk_gap_exceeded_total = Counter("sse_chunk_gap_exceeded_total", "SSE chunk gaps > 1.5s")
+    context_timeout_total = Counter("context_timeout_total", "Context service timeouts", ["service"])
+    context_requests_total = Counter("context_requests_total", "Context service requests", ["service", "status"])
+    cache_hits_total = Counter("cache_hits_total", "Cache hits", ["service"])
+    cache_misses_total = Counter("cache_misses_total", "Cache misses", ["service"])
+except ValueError:
+    # metrics already registered
+    pass
 
 class ChatOrchestratorService:
     """
@@ -61,6 +97,18 @@ class ChatOrchestratorService:
         self.professor_service = ProfessorIntelligenceService(redis_client=redis_client)
         self.difficulty_service = CourseDifficultyService(redis_client=redis_client)
         self.enrollment_service = EnrollmentPredictionService(redis_client=redis_client)
+        self.grades_service = GradesService(redis_client=redis_client)
+        self.schedule_fit_service = ScheduleFitService(redis_client=redis_client)
+        self.profile_service = StudentProfileService(redis_client=redis_client)
+        self.conflict_detection_service = ConflictDetectionService()
+        
+        # Initialize major requirements service (feature flagged)
+        self.major_req_enabled = os.getenv("ENABLE_DEGREE_PROGRESS", "true").lower() == "true"
+        if self.major_req_enabled:
+            self.major_req_service = MajorRequirementsService(
+                neo4j_client=self.graph_service.driver, 
+                redis_client=redis_client
+            )
         
         # Initialize LLM router with first-token deadline pattern
         self.llm_router = LLMRouter(
@@ -81,6 +129,31 @@ class ChatOrchestratorService:
         self.CONTEXT_TIMEOUT_MS = 150  # Fail-fast per micro-service
         self.LLM_FALLBACK_TIMEOUT_MS = 200  # Switch to OpenAI fallback
         self.MAX_CONVERSATION_HISTORY = 20  # Bounded conversation memory
+        # Redis TTL (seconds) – env override allowed
+        self.REDIS_TTL_SECONDS = int(os.getenv("REDIS_TTL_DAYS", "7")) * 24 * 3600
+        # Timeouts so Redis can't tank P95
+        self.REDIS_OP_TIMEOUT_MS = int(os.getenv("REDIS_OP_TIMEOUT_MS", "50"))
+
+        # Build async Redis client if not injected
+        if self.redis_client is None:
+            try:
+                import redis.asyncio as aioredis
+                redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+                # decode_responses=True → JSON strings in/out, no bytes juggling
+                self.redis_client = aioredis.from_url(redis_url, decode_responses=True)
+                # Light liveness check, timeboxed
+                async def _ping():
+                    try:
+                        return await asyncio.wait_for(self.redis_client.ping(), timeout=self.REDIS_OP_TIMEOUT_MS/1000)
+                    except Exception:
+                        return False
+                # fire-and-forget ping (don’t block init)
+                try:
+                    asyncio.get_running_loop().create_task(_ping())
+                except RuntimeError:
+                    pass
+            except Exception as e:
+                logger.warning(f"Redis initialization skipped (continuing without persistence): {e}")
         
         # Template for prompt construction with structured output requirement (Friend's JSON enforcement)
         self.PROMPT_TEMPLATE = """System: You are an intelligent Cornell University academic advisor. You have access to course prerequisites, professor ratings, grade distributions, and enrollment data. Provide helpful, actionable advice for course planning and academic decisions.
@@ -102,26 +175,26 @@ User Profile: {profile_json}
 Provide a helpful conversational response that ends with structured recommendations in this EXACT JSON format:
 
 ```json
-{
+{{
   "recommendations": [
-    {
+    {{
       "course_code": "CS 3110",
       "title": "Data Structures and Functional Programming",
       "rationale": "Builds directly on CS 2110 and is required for ML track",
       "priority": 1,
       "next_action": "add_to_plan",
       "difficulty_warning": "High workload but manageable after 2110",
-      "source": {}
-    }
+      "source": {{}}
+    }}
   ],
   "constraints": ["Prerequisites: CS 2110 required", "Time conflict warning"],
   "next_actions": [
-    {"type": "check_prerequisites", "course_code": "CS 3110"},
-    {"type": "monitor_enrollment", "course_code": "CS 3110"}
+    {{"type": "check_prerequisites", "course_code": "CS 3110"}},
+    {{"type": "monitor_enrollment", "course_code": "CS 3110"}}
   ],
   "notes": "Consider semester balance with other challenging courses",
   "provenance": ["graphctx:v42", "grades:v12", "rmp:v7"]
-}
+}}
 ```
 
 STRICT REQUIREMENTS (Ground Truth: Actionable Prioritization):
@@ -157,132 +230,160 @@ Answer:"""
         
         logger.info(f"Processing chat request {request_id}: {request.message[:50]}...")
         
-        try:
-            # Step 1: Load conversation state
-            conversation_state = await self._load_conversation_state(
-                request.conversation_id,
-                request.student_profile
-            )
+        # Start latency measurement for SLO tracking
+        with chat_request_duration_seconds.time():
+            try:
+                # Step 1: Load conversation state
+                conversation_state = await self._load_conversation_state(
+                    request.conversation_id,
+                    request.student_profile
+                )
+                
+                yield ChatStreamChunk(
+                    chunk_id=0,
+                    content="",
+                    chunk_type="context_info",
+                    metadata={"status": "loading_context", "request_id": request_id}
+                )
             
-            yield ChatStreamChunk(
-                chunk_id=0,
-                content="",
-                chunk_type="context_info",
-                metadata={"status": "loading_context", "request_id": request_id}
-            )
-            
-            # Step 2: Gather context in parallel with fail-fast timeouts
-            context = await self._gather_context_parallel(
-                request, 
-                conversation_state.student_profile,
-                request_id
-            )
-            
-            yield ChatStreamChunk(
-                chunk_id=1, 
-                content="",
-                chunk_type="context_info",
-                metadata={"status": "building_prompt", "context_sources": len(context.context_sources)}
-            )
-            
-            # Step 3: Build prompt with deterministic token budget
-            prompt = await self._build_prompt(
-                request.message,
-                context,
-                conversation_state
-            )
-            
-            if not prompt:
+                # Step 2: Gather context in parallel with fail-fast timeouts
+                context = await self._gather_context_parallel(
+                    request, 
+                    conversation_state.student_profile,
+                    request_id
+                )
+                
+                yield ChatStreamChunk(
+                    chunk_id=1, 
+                    content="",
+                    chunk_type="context_info",
+                    metadata={"status": "building_prompt", "context_sources": len(context.context_sources)}
+                )
+                
+                # Step 3: Build prompt with deterministic token budget
+                prompt = await self._build_prompt(
+                    request.message,
+                    context,
+                    conversation_state
+                )
+                
+                if not prompt:
+                    yield ChatStreamChunk(
+                        chunk_id=2,
+                        content="I'm having trouble processing your request right now. Please try again.",
+                        chunk_type="error", 
+                        metadata={"error": "prompt_generation_failed"}
+                    )
+                    return
+                
                 yield ChatStreamChunk(
                     chunk_id=2,
-                    content="I'm having trouble processing your request right now. Please try again.",
-                    chunk_type="error", 
-                    metadata={"error": "prompt_generation_failed"}
+                    content="",
+                    chunk_type="context_info", 
+                    metadata={"status": "generating_response", "prompt_tokens": len(prompt.split())}
                 )
-                return
-            
-            yield ChatStreamChunk(
-                chunk_id=2,
-                content="",
-                chunk_type="context_info", 
-                metadata={"status": "generating_response", "prompt_tokens": len(prompt.split())}
-            )
-            
-            # Step 4: Generate streaming LLM response
-            chunk_counter = 3
-            response_text = ""
-            provider_used = None
-            first_token_time = None
-            llm_generation_start = time.perf_counter()
-
-            async for chunk in self._generate_llm_response(prompt):
-                if chunk.metadata and "llm_provider" in chunk.metadata:
-                    provider_used = chunk.metadata["llm_provider"]
                 
-                # Track first token timing for SLO observability
-                if chunk.chunk_type == "token" and first_token_time is None:
-                    first_token_time = (time.perf_counter() - llm_generation_start) * 1000
+                # Step 4: Generate streaming LLM response
+                chunk_counter = 3
+                response_text = ""
+                provider_used = None
+                first_token_time = None
+                llm_generation_start = time.perf_counter()
+                last_chunk_time = llm_generation_start  # For gap detection
                 
-                chunk.chunk_id = chunk_counter
-                chunk_counter += 1
-                if chunk.chunk_type == "token":
-                    response_text += chunk.content
-                yield chunk
-            
-            # Step 5: Update conversation state and yield final response
-            processing_time_ms = int((time.time() - start_time) * 1000)
-            
-            # Update conversation with new message and response
-            conversation_state.messages.append(
-                ConversationMessage(role="user", content=request.message)
-            )
-            conversation_state.messages.append(
-                ConversationMessage(role="assistant", content=response_text)
-            )
-            conversation_state.updated_at = datetime.utcnow()
-            
-            # Extract and validate structured JSON response (Friend's strict validation)
-            validated_response, recommended_courses = await self._validate_and_extract_json(response_text)
-            
-            # Store active recommendations for /explain command
-            conversation_state.active_recommendations = recommended_courses
-            
-            # Save conversation state
-            await self._save_conversation_state(conversation_state)
-            
-            # Yield completion chunk
-            yield ChatStreamChunk(
-                chunk_id=chunk_counter,
-                content="",
-                chunk_type="done",
-                metadata={
-                    "conversation_id": conversation_state.conversation_id,
-                    "processing_time_ms": processing_time_ms,
-                    "llm_provider": provider_used or "unknown",
-                    "fallback_triggered": (provider_used == "openai-fallback"),
-                    "recommended_courses": recommended_courses,
-                    "context_sources_used": [source.source_type for source in context.context_sources],
-                    "context_fetch_time_ms": context.processing_metadata.get("context_fetch_time_ms"),
-                    # SSE observability metrics for performance SLO monitoring
-                    "first_token_ms": first_token_time,
-                    "provider_first": provider_used or "unknown",
-                    "slo_compliance": {
-                        "first_token_slo_met": first_token_time is not None and first_token_time < 500,
-                        "total_response_slo_met": processing_time_ms < 500
+                try:
+                    async for chunk in self._generate_llm_response(prompt):
+                        current_time = time.perf_counter()
+                        
+                        # SSE Watchdog: Monitor inter-chunk gaps
+                        if chunk_counter > 3:  # Skip gap check for first chunk
+                            gap_ms = (current_time - last_chunk_time) * 1000
+                            if gap_ms > 1500:  # Gap threshold: 1.5s
+                                logger.warning(f"SSE chunk gap detected: {gap_ms:.1f}ms between chunks {chunk_counter-1} and {chunk_counter}")
+                                sse_chunk_gap_exceeded_total.inc()
+                        
+                        last_chunk_time = current_time
+                        
+                        if chunk.metadata and "llm_provider" in chunk.metadata:
+                            provider_used = chunk.metadata["llm_provider"]
+                        
+                        # Track first token timing for SLO observability  
+                        if chunk.chunk_type == "token" and first_token_time is None:
+                            first_token_time = (current_time - llm_generation_start) * 1000
+                        
+                        chunk.chunk_id = chunk_counter
+                        chunk_counter += 1
+                        if chunk.chunk_type == "token":
+                            response_text += chunk.content
+                        yield chunk
+                        
+                except Exception as stream_error:
+                    # Track streaming failures for monitoring
+                    error_type = type(stream_error).__name__
+                    sse_stream_errors_total.labels(error_type=error_type).inc()
+                    logger.error(f"SSE streaming error: {stream_error}")
+                    raise
+                
+                # Step 5: Update conversation state and yield final response
+                processing_time_ms = int((time.time() - start_time) * 1000)
+                
+                # Update conversation with new message and response
+                conversation_state.messages.append(
+                    ConversationMessage(role="user", content=request.message)
+                )
+                conversation_state.messages.append(
+                    ConversationMessage(role="assistant", content=response_text)
+                )
+                conversation_state.updated_at = datetime.utcnow()
+                
+                # Enforce schema: parse/repair/re-ask to ensure a valid ChatAdvisorResponse
+                validated_response, recommended_courses = await self._enforce_json_schema(response_text, prompt)
+                
+                # Store active recommendations for /explain command
+                conversation_state.active_recommendations = recommended_courses
+                
+                # Save conversation state
+                await self._save_conversation_state(conversation_state)
+                
+                # Yield completion chunk
+                yield ChatStreamChunk(
+                    chunk_id=chunk_counter,
+                    content="",
+                    chunk_type="done",
+                    metadata={
+                        "conversation_id": conversation_state.conversation_id,
+                        "processing_time_ms": processing_time_ms,
+                        "llm_provider": provider_used or "unknown",
+                        "fallback_triggered": (provider_used == "openai-fallback"),
+                        "recommended_courses": recommended_courses,
+                        "context_sources_used": [source.source_type for source in context.context_sources],
+                        "context_fetch_time_ms": context.processing_metadata.get("context_fetch_time_ms"),
+                        "provenance_info": {
+                            "sources": [],  # TODO: fix provenance_tags scope issue
+                            "data_freshness": self._get_data_freshness_summary(context.context_sources),
+                            "professor_selections": self._get_professor_selection_summary(context.context_sources),
+                            "updated_at": datetime.utcnow().isoformat()
+                        },
+                        # SSE observability metrics for performance SLO monitoring
+                        "first_token_ms": first_token_time,
+                        "provider_first": provider_used or "unknown",
+                        "slo_compliance": {
+                            "first_token_slo_met": first_token_time is not None and first_token_time < 500,
+                            "total_response_slo_met": processing_time_ms < 500
+                        }
                     }
-                }
-            )
-            
-            logger.info(f"Chat request {request_id} completed in {processing_time_ms}ms")
-            
-        except Exception as e:
-            logger.exception(f"Chat request {request_id} failed: {e}")
-            yield ChatStreamChunk(
-                chunk_id=999,
-                content=f"I encountered an error processing your request: {str(e)}",
-                chunk_type="error",
-                metadata={"error": str(e), "request_id": request_id}
-            )
+                )
+                
+                logger.info(f"Chat request {request_id} completed in {processing_time_ms}ms")
+                
+            except Exception as e:
+                logger.exception(f"Chat request {request_id} failed: {e}")
+                yield ChatStreamChunk(
+                    chunk_id=999,
+                    content=f"I encountered an error processing your request: {str(e)}",
+                    chunk_type="error",
+                    metadata={"error": str(e), "request_id": request_id}
+                )
 
     async def _gather_context_parallel(
         self,
@@ -318,8 +419,23 @@ Answer:"""
         if prefs.get("include_difficulty_info", True):
             tasks.append(("difficulty_data", self._fetch_difficulty_context(request.message, student_profile)))
 
+        if prefs.get("include_grades_data", True):
+            tasks.append(("grades_data", self._fetch_grades_context(request.message, student_profile)))
+
         if prefs.get("include_enrollment_data", True):
             tasks.append(("enrollment_data", self._fetch_enrollment_context(request.message, student_profile)))
+        
+        # Schedule fit context (behind feature flag)
+        if os.getenv("ENABLE_SCHEDULE_FIT", "false").lower() == "true":
+            tasks.append(("schedule_fit", self._fetch_schedule_fit_context(request.message, student_profile)))
+        
+        # Degree progress context (behind feature flag)
+        if self.major_req_enabled and prefs.get("include_degree_progress", True) and getattr(student_profile, "major", None):
+            tasks.append(("degree_progress", self._fetch_degree_progress_context(student_profile)))
+        
+        # Conflict detection for registration intelligence
+        if prefs.get("include_conflict_detection", True):
+            tasks.append(("conflict_detection", self._fetch_conflict_detection_context(request.message, student_profile)))
         
         timeout_s = self.CONTEXT_TIMEOUT_MS / 1000.0
         
@@ -329,10 +445,18 @@ Answer:"""
             try:
                 result = await asyncio.wait_for(coro, timeout=timeout_s)
                 duration_ms = int((time.perf_counter() - start) * 1000)
+                context_requests_total.labels(service=name, status="success").inc()
                 return name, result, duration_ms, None
+            except asyncio.TimeoutError as e:
+                duration_ms = int((time.perf_counter() - start) * 1000)
+                logger.warning(f"Context {name} timeout in {duration_ms}ms: {e}")
+                context_requests_total.labels(service=name, status="timeout").inc()
+                context_timeout_total.labels(service=name).inc()
+                return name, None, duration_ms, e
             except Exception as e:
                 duration_ms = int((time.perf_counter() - start) * 1000)
-                logger.warning(f"Context {name} failed/timeout in {duration_ms}ms: {e}")
+                logger.warning(f"Context {name} failed in {duration_ms}ms: {e}")
+                context_requests_total.labels(service=name, status="error").inc()
                 return name, None, duration_ms, e
         
         # Execute all tasks in parallel with real timing
@@ -557,6 +681,61 @@ Answer:"""
             logger.exception(f"Difficulty context fetch failed: {e}")
         return None
 
+    async def _fetch_grades_context(self, message: str, student_profile: StudentProfile) -> Optional[Dict[str, Any]]:
+        """
+        Fetch real Cornell grade distribution context using GradesService.
+        
+        Following friend's guidance: Real data integration for Information Consolidation ground truth.
+        """
+        try:
+            # Extract course codes from message
+            import re
+            course_pattern = r'([A-Z]{2,4})\s*(\d{4})'
+            course_matches = re.findall(course_pattern, message.upper())
+            
+            grades_data = {}
+            
+            if course_matches:
+                # Get grades data for mentioned courses
+                for subject, number in course_matches[:3]:  # Limit to 3 courses for token budget
+                    course_code = f"{subject} {number}"
+                    course_stats = await self.grades_service.get_course_stats(course_code)
+                    if course_stats:
+                        grades_data[course_code] = {
+                            "mean_gpa": course_stats.mean_gpa,
+                            "grade_distribution": course_stats.grade_histogram,
+                            "pass_rate": course_stats.pass_rate,
+                            "difficulty_percentile": course_stats.difficulty_percentile,
+                            "provenance": course_stats.provenance
+                        }
+            else:
+                # If no specific courses mentioned, check student's current/planned courses
+                if student_profile:
+                    courses_to_check = student_profile.current_courses[:2]
+                    
+                    for course_code in courses_to_check:
+                        course_stats = await self.grades_service.get_course_stats(course_code)
+                        if course_stats:
+                            grades_data[course_code] = {
+                                "mean_gpa": course_stats.mean_gpa,
+                                "grade_distribution": course_stats.grade_histogram,
+                                "pass_rate": course_stats.pass_rate,
+                                "difficulty_percentile": course_stats.difficulty_percentile,
+                                "provenance": course_stats.provenance
+                            }
+            
+            if grades_data:
+                return {
+                    "grade_distributions": grades_data,
+                    "query": message,
+                    "courses_analyzed": list(grades_data.keys()),
+                    "data_source": "cornell_grade_distributions"
+                }
+                
+        except Exception as e:
+            logger.exception(f"Grades context fetch failed: {e}")
+        return None
+
     async def _fetch_enrollment_context(self, message: str, student_profile: StudentProfile) -> Optional[Dict[str, Any]]:
         """
         Fetch enrollment prediction and registration advice context.
@@ -617,6 +796,221 @@ Answer:"""
             logger.exception(f"Enrollment context fetch failed: {e}")
         return None
 
+    async def _fetch_schedule_fit_context(self, message: str, student_profile: StudentProfile) -> Optional[Dict[str, Any]]:
+        """
+        Fetch schedule fit context with conflict detection and preference scoring.
+        
+        Extract course codes from message or use student's planned courses.
+        """
+        try:
+            # Extract course codes from message
+            candidates = self._extract_course_codes(message)
+            if not candidates and student_profile and student_profile.planned_courses:
+                candidates = student_profile.planned_courses[:6]  # Limit for performance
+            
+            if not candidates:
+                return None
+
+            # Build preferences from student profile
+            prefs = ProfilePrefs(
+                dislikes_morning=bool(getattr(student_profile, "dislikes_morning", False)),
+                no_fri=bool(getattr(student_profile, "no_friday", False)),
+            )
+            
+            # Get ranked schedules
+            ranked = await self.schedule_fit_service.rank_schedules(candidates, prefs, limit=3)
+            if not ranked:
+                return None
+
+            # Generate summary for prompt (≤120 tokens)
+            best = ranked[0]
+            summary = f"Best schedule score {best.fit_score}/100 with {len(best.section_bundle_ids)} sections"
+            if best.conflict_reason:
+                summary += f" ({best.conflict_reason})"
+
+            return {
+                "schedule_fit": {
+                    "best": best.model_dump(),
+                    "alternatives": [r.model_dump() for r in ranked[1:]] if len(ranked) > 1 else [],
+                    "summary": summary,
+                    "course_codes": candidates,
+                    "preferences_applied": prefs.model_dump()
+                }
+            }
+        except Exception as e:
+            logger.exception(f"Schedule fit context fetch failed: {e}")
+        return None
+
+    def _extract_course_codes(self, message: str) -> List[str]:
+        """Extract course codes from message text."""
+        import re
+        course_pattern = r'([A-Z]{2,4})\s*(\d{4})'
+        course_matches = re.findall(course_pattern, message.upper())
+        return [f"{subject} {number}" for subject, number in course_matches]
+    
+    def _get_data_freshness_summary(self, context_sources) -> Dict[str, str]:
+        """Generate a summary of data freshness for UI display"""
+        freshness_summary = {}
+        
+        for source in context_sources:
+            source_type = source.source_type
+            metadata = source.data.get("metadata", {}) if source.data else {}
+            
+            # Extract freshness information from source metadata
+            if "version" in metadata:
+                version_info = f"v{metadata['version']}"
+            else:
+                version_info = "v1"
+                
+            if "timestamp" in metadata:
+                try:
+                    timestamp = datetime.fromisoformat(metadata["timestamp"].replace("Z", "+00:00"))
+                    hours_ago = int((datetime.utcnow().replace(tzinfo=timezone.utc) - timestamp).total_seconds() / 3600)
+                    
+                    if hours_ago < 1:
+                        time_info = "just updated"
+                    elif hours_ago < 24:
+                        time_info = f"{hours_ago}h ago"
+                    else:
+                        days_ago = hours_ago // 24
+                        time_info = f"{days_ago}d ago"
+                except Exception:
+                    time_info = "recently"
+            else:
+                time_info = "recently"
+                
+            # Format as "source (version) · time_info"
+            freshness_summary[source_type] = f"{source_type.title()} ({version_info}) · {time_info}"
+            
+        return freshness_summary
+    
+    def _get_professor_selection_summary(self, context_sources) -> Dict[str, str]:
+        """Extract professor selection reasoning for UI explainability"""
+        selection_summary = {}
+        
+        for source in context_sources:
+            if source.source_type == "professor_intel" and source.data:
+                prof_data = source.data.get("professor_intelligence", {})
+                for course_code, intel in prof_data.items():
+                    selection_reason = intel.get("selection_reason")
+                    if selection_reason:
+                        # Convert to human-readable format
+                        if selection_reason == "most_reviews_then_rating":
+                            selection_summary[course_code] = "Most reviews, then rating"
+                        elif selection_reason == "enhanced_mock_deterministic":
+                            selection_summary[course_code] = "Enhanced mock data"
+                        else:
+                            selection_summary[course_code] = selection_reason.replace("_", " ").title()
+        
+        return selection_summary
+    
+    async def _fetch_degree_progress_context(self, student_profile: StudentProfile) -> Optional[Dict[str, Any]]:
+        """
+        Fetch degree progress context showing unmet requirements for graduation planning.
+        """
+        try:
+            dp = await self.major_req_service.unmet_reqs(student_profile)
+            if not dp or not dp.unmet:
+                return None
+                
+            # Summarize top 5 unmet deterministically; keep token budget tight (≤150 tokens)
+            lines = []
+            for u in dp.unmet[:5]:
+                if u.credit_gap:
+                    lines.append(f"- {u.summary}: need {u.credit_gap} credits (e.g., {', '.join(u.courses_to_satisfy[:3])})")
+                elif u.count_gap:
+                    lines.append(f"- {u.summary}: take {u.count_gap} more (e.g., {', '.join(u.courses_to_satisfy[:3])})")
+                else:
+                    lines.append(f"- {u.summary}: remaining")
+                    
+            section = "### Degree Progress\n" + "\n".join(lines)
+            
+            # Hard cap ~150 tokens ≈ 600 chars
+            if len(section) > 600:
+                section = section[:580].rsplit("\n", 1)[0] + "\n- …"
+                
+            return {
+                "section": section,
+                "provenance": {"source": "neo4j", "as_of": dp.as_of},
+                "major_id": dp.major_id,
+                "unmet_count": len(dp.unmet)
+            }
+        except Exception as e:
+            # Don't block chat if degree calc fails
+            logger.warning(f"Degree progress fetch failed: {e}")
+            return None
+
+    async def _fetch_conflict_detection_context(self, message: str, student_profile: StudentProfile) -> Optional[Dict[str, Any]]:
+        """
+        Fetch conflict detection context for registration intelligence.
+        
+        Analyzes requested courses for time conflicts and provides backup plans.
+        """
+        try:
+            # Extract course codes from message using regex
+            import re
+            course_pattern = r'\b[A-Z]{2,4}\s+\d{4}\b'
+            mentioned_courses = re.findall(course_pattern, message.upper())
+            
+            # Also check current courses from profile
+            all_courses = set(mentioned_courses)
+            if hasattr(student_profile, 'current_courses'):
+                all_courses.update(student_profile.current_courses)
+            
+            if len(all_courses) < 2:
+                return None  # Need at least 2 courses to detect conflicts
+            
+            # Detect conflicts
+            conflicts = self.conflict_detection_service.detect_conflicts(list(all_courses))
+            backup_plans = self.conflict_detection_service.suggest_backup_plans(conflicts)
+            
+            if not conflicts:
+                return {
+                    "section": "### Schedule Analysis\n✅ No time conflicts detected in your course selection.",
+                    "provenance": {"source": "conflict_detection", "as_of": "demo_data"},
+                    "conflict_count": 0,
+                    "courses_analyzed": list(all_courses)
+                }
+            
+            # Format conflict summary with backup suggestions
+            conflict_summary = self.conflict_detection_service.format_conflict_summary(conflicts)
+            backup_summary = self.conflict_detection_service.format_backup_suggestions(backup_plans)
+            
+            section = f"### Schedule Analysis\n{conflict_summary}"
+            if backup_summary:
+                section += f"\n{backup_summary}"
+            
+            # Cap at ~200 tokens ≈ 800 chars for registration intelligence context
+            if len(section) > 800:
+                section = section[:780].rsplit("\n", 1)[0] + "\n..."
+            
+            return {
+                "section": section,
+                "provenance": {"source": "conflict_detection", "as_of": "demo_data"},
+                "conflict_count": len(conflicts),
+                "courses_analyzed": list(all_courses),
+                "conflicts": [
+                    {
+                        "course_a": c.course_a,
+                        "course_b": c.course_b,
+                        "type": c.conflict_type.value,
+                        "severity": c.severity
+                    } for c in conflicts
+                ],
+                "backup_plans": {
+                    course: [
+                        {
+                            "backup_course": plan.backup_course,
+                            "rationale": plan.rationale,
+                            "difficulty_delta": plan.difficulty_delta
+                        } for plan in plans
+                    ] for course, plans in backup_plans.items()
+                }
+            }
+        except Exception as e:
+            logger.warning(f"Conflict detection fetch failed: {e}")
+            return None
+
     async def _build_prompt(
         self,
         user_message: str,
@@ -632,15 +1026,25 @@ Answer:"""
             # Prepare sections for token budget manager
             sections = {}
             
-            # Student profile section
+            # Student profile section (token-budgeted v2)
             if context.student_profile:
-                profile_json = {
-                    "major": context.student_profile.major,
-                    "year": context.student_profile.year,
-                    "completed_courses": context.student_profile.completed_courses[:10],
-                    "interests": context.student_profile.interests[:3]
-                }
-                sections["student_profile"] = str(profile_json)
+                # Use prompt budgeter v2 for efficient token usage
+                if self.profile_service:
+                    sections["student_profile"] = self.profile_service.to_prompt_budget(
+                        context.student_profile, 
+                        max_tokens=200  # Stay within budget per redisTicket.md
+                    )
+                else:
+                    # Fallback for when Redis/profile service unavailable
+                    sections["student_profile"] = f"Student: {context.student_profile.major or 'Undeclared'}"
+                    if context.student_profile.year:
+                        sections["student_profile"] += f" {context.student_profile.year}"
+                    if context.student_profile.completed_courses:
+                        completed_count = len(context.student_profile.completed_courses)
+                        if completed_count <= 3:
+                            sections["student_profile"] += f". Completed: {', '.join(context.student_profile.completed_courses[:3])}"
+                        else:
+                            sections["student_profile"] += f". Completed: {completed_count} courses"
             
             # Extract context data by source type
             for source in context.context_sources:
@@ -678,6 +1082,18 @@ Answer:"""
                         if diff_summaries:
                             sections["difficulty_data"] = f"### Course Difficulty\n" + "\n".join(diff_summaries)
                 
+                elif source.source_type == "grades_data" and source.data:
+                    grades_data = source.data.get("grade_distributions", {})
+                    if grades_data:
+                        grades_summaries = []
+                        for course_code, data in list(grades_data.items())[:2]:
+                            gpa = data.get("mean_gpa", 0.0)
+                            pass_rate = data.get("pass_rate", 0.0)
+                            difficulty = data.get("difficulty_percentile", 50)
+                            grades_summaries.append(f"- {course_code}: GPA {gpa:.2f}, Pass Rate {pass_rate*100:.0f}%, Difficulty {difficulty}th percentile")
+                        if grades_summaries:
+                            sections["grades_data"] = f"### Grade Distributions\n" + "\n".join(grades_summaries)
+                
                 elif source.source_type == "enrollment_data" and source.data:
                     enroll_data = source.data.get("enrollment_predictions", {})
                     if enroll_data:
@@ -687,6 +1103,12 @@ Answer:"""
                                 enroll_summaries.append(f"- {course_code}: {prediction['prompt_summary']}")
                         if enroll_summaries:
                             sections["enrollment_data"] = f"### Registration Advice\n" + "\n".join(enroll_summaries)
+            
+                elif source.source_type == "schedule_fit":
+                    # Schedule fit context (≤120 tokens)
+                    schedule_data = source.data.get("schedule_fit", {})
+                    if schedule_data and schedule_data.get("summary"):
+                        sections["schedule_fit"] = f"### Schedule Analysis\n{schedule_data['summary']}"
             
             # Conversation history
             history_lines = []
@@ -703,31 +1125,33 @@ Answer:"""
             context_sections = []
             provenance_tags = []
             
-            for key in ["vector_search", "graph_analysis", "professor_intel", "difficulty_data", "enrollment_data"]:
+            for key in ["vector_search", "graph_analysis", "professor_intel", "difficulty_data", "grades_data", "enrollment_data", "schedule_fit", "degree_progress"]:
                 if key in sections and sections[key]:
-                    context_sections.append(sections[key])
+                    if isinstance(sections[key], dict) and "section" in sections[key]:
+                        context_sections.append(sections[key]["section"])
+                    else:
+                        context_sections.append(sections[key])
             
             # Collect provenance information from context sources
             for source in context.context_sources:
-                if source.metadata and "source_tag" in source.metadata:
-                    provenance_tags.append(source.metadata["source_tag"])
-                elif source.source_type:
-                    # Generate default tag with version if available
-                    version = source.metadata.get("version", 1) if source.metadata else 1
-                    source_tag = f"{source.source_type}:v{version}"
+                if source.source_type:
+                    # Generate default tag with version (default to v1 for now)
+                    source_tag = f"{source.source_type}:v1"
                     provenance_tags.append(source_tag)
             
-            # Create provenance section for the prompt
-            provenance_section = ""
+            # Create provenance section for the prompt (always provide safe default)
             if provenance_tags:
                 provenance_section = f"=== SOURCES ===\n" + "\n".join([f"- {tag}" for tag in provenance_tags])
+            else:
+                provenance_section = "=== SOURCES ===\n- No sources available"
             
             # Format prompt using class template with structured JSON requirement
+            # Guard against missing keys with safe defaults (fixes template formatting issue)
             prompt_data = {
                 "profile_json": sections.get("student_profile", "{}"),
                 "context_sections": "\n\n".join(context_sections) if context_sections else "No additional context available.",
                 "conversation_history": sections.get("conversation_history", "No previous conversation."),
-                "user_message": user_message,
+                "user_message": user_message or "Please provide course recommendations.",
                 "provenance_section": provenance_section
             }
             
@@ -1031,6 +1455,26 @@ Answer:"""
             logger.warning(f"Failed to extract reasoning context for {course_code}: {e}")
             return "Recommended based on academic analysis"
 
+    # ---------- Redis helpers (timeboxed; graceful degradation) ----------
+    async def _redis_get(self, key: str):
+        if not self.redis_client:
+            return None
+        try:
+            return await asyncio.wait_for(self.redis_client.get(key), timeout=self.REDIS_OP_TIMEOUT_MS/1000)
+        except Exception as e:
+            logger.warning(f"Redis GET failed for {key}: {e}")
+            return None
+
+    async def _redis_setex(self, key: str, ttl_seconds: int, value: str):
+        if not self.redis_client:
+            return False
+        try:
+            await asyncio.wait_for(self.redis_client.setex(key, ttl_seconds, value), timeout=self.REDIS_OP_TIMEOUT_MS/1000)
+            return True
+        except Exception as e:
+            logger.warning(f"Redis SETEX failed for {key}: {e}")
+            return False
+
     async def _load_conversation_state(
         self,
         conversation_id: Optional[str],
@@ -1043,12 +1487,21 @@ Answer:"""
         across multiple conversation sessions.
         """
         
-        if conversation_id and self.redis_client:
+        # Reconcile/merge profile first (if provided) so state uses canonical data
+        merged_profile = None
+        if student_profile and self.profile_service:
+            try:
+                merged_profile = await self.profile_service.merge(student_profile)
+            except Exception as e:
+                logger.warning(f"Profile merge failed; continuing with provided profile: {e}")
+
+        if conversation_id:
             try:
                 cache_key = f"conversation:{conversation_id}"
-                cached_state = await self.redis_client.get(cache_key)
+                cached_state = await self._redis_get(cache_key)
                 
                 if cached_state:
+                    redis_hit.inc()
                     # Parse cached conversation state
                     import json
                     state_data = json.loads(cached_state)
@@ -1078,6 +1531,8 @@ Answer:"""
                     
                     logger.debug(f"Loaded conversation state: {conversation_id} with {len(messages)} messages")
                     return cached_state
+                else:
+                    redis_miss.inc()
                     
             except Exception as e:
                 logger.exception(f"Failed to load conversation state {conversation_id}: {e}")
@@ -1086,7 +1541,9 @@ Answer:"""
         new_conversation_id = conversation_id or f"conv_{int(time.time())}_{uuid.uuid4().hex[:8]}"
         
         # Use provided profile or create default
-        if student_profile:
+        if merged_profile:
+            default_profile = merged_profile
+        elif student_profile:
             default_profile = student_profile
         else:
             default_profile = StudentProfile(
@@ -1119,64 +1576,68 @@ Answer:"""
         Serves Contextual Relevance ground truth by persisting personalized context
         for future conversation sessions.
         """
-        if self.redis_client:
-            try:
-                cache_key = f"conversation:{state.conversation_id}"
-                
-                # Serialize conversation state to JSON-compatible format
-                state_data = {
-                    "conversation_id": state.conversation_id,
-                    "student_profile": {
-                        "student_id": state.student_profile.student_id,
-                        "major": state.student_profile.major,
-                        "year": state.student_profile.year,
-                        "completed_courses": state.student_profile.completed_courses or [],
-                        "current_courses": state.student_profile.current_courses or [],
-                        "interests": state.student_profile.interests or []
-                    },
-                    "messages": [
-                        {
-                            "role": msg.role,
-                            "content": msg.content,
-                            "timestamp": msg.timestamp.isoformat()
-                        } for msg in state.messages[-self.MAX_CONVERSATION_HISTORY:]  # Limit stored messages
-                    ],
-                    "context_cache": state.context_cache or {},
-                    "active_recommendations": state.active_recommendations or [],
-                    "created_at": state.created_at.isoformat(),
-                    "updated_at": state.updated_at.isoformat()
-                }
-                
-                # Save to Redis with 7-day TTL (balances persistence with cleanup)
-                import json
-                await self.redis_client.setex(
-                    cache_key,
-                    7 * 24 * 3600,  # 7 days TTL - enough for semester planning
-                    json.dumps(state_data, default=str)
-                )
-                
-                # Also maintain a student profile index for cross-conversation continuity
-                profile_key = f"student_profile:{state.student_profile.student_id}"
-                profile_data = {
+        try:
+            cache_key = f"conversation:{state.conversation_id}"
+
+            # Serialize conversation state to JSON-compatible format
+            state_data = {
+                "conversation_id": state.conversation_id,
+                "student_profile": {
+                    "student_id": state.student_profile.student_id,
                     "major": state.student_profile.major,
+                    "track": state.student_profile.track,
+                    "minor": state.student_profile.minor,
                     "year": state.student_profile.year,
                     "completed_courses": state.student_profile.completed_courses or [],
                     "current_courses": state.student_profile.current_courses or [],
                     "interests": state.student_profile.interests or [],
-                    "last_conversation_id": state.conversation_id,
-                    "last_active": state.updated_at.isoformat()
-                }
-                
-                await self.redis_client.setex(
-                    profile_key,
-                    30 * 24 * 3600,  # 30 days TTL for profile data
-                    json.dumps(profile_data)
-                )
-                
+                    "gpa": state.student_profile.gpa,
+                    "gpa_goal": state.student_profile.gpa_goal,
+                    "risk_tolerance": state.student_profile.risk_tolerance,
+                    "blocked_times": state.student_profile.blocked_times or [],
+                    "preferences": state.student_profile.preferences or {}
+                },
+                "messages": [
+                    {
+                        "role": msg.role,
+                        "content": msg.content,
+                        "timestamp": msg.timestamp.isoformat()
+                    } for msg in state.messages[-self.MAX_CONVERSATION_HISTORY:]  # Limit stored messages
+                ],
+                "context_cache": state.context_cache or {},
+                "active_recommendations": state.active_recommendations or [],
+                "created_at": state.created_at.isoformat(),
+                "updated_at": state.updated_at.isoformat()
+            }
+
+            import json
+            ok1 = await self._redis_setex(cache_key, self.REDIS_TTL_SECONDS, json.dumps(state_data, default=str))
+
+            # Also maintain a student profile index for cross-conversation continuity
+            profile_key = f"student_profile:{state.student_profile.student_id}"
+            profile_data = {
+                "student_id": state.student_profile.student_id,
+                "major": state.student_profile.major,
+                "track": state.student_profile.track,
+                "minor": state.student_profile.minor,
+                "year": state.student_profile.year,
+                "completed_courses": state.student_profile.completed_courses or [],
+                "current_courses": state.student_profile.current_courses or [],
+                "interests": state.student_profile.interests or [],
+                "gpa": state.student_profile.gpa,
+                "gpa_goal": state.student_profile.gpa_goal,
+                "risk_tolerance": state.student_profile.risk_tolerance,
+                "blocked_times": state.student_profile.blocked_times or [],
+                "preferences": state.student_profile.preferences or {},
+                "last_conversation_id": state.conversation_id,
+                "last_active": state.updated_at.isoformat()
+            }
+            ok2 = await self._redis_setex(profile_key, 30 * 24 * 3600, json.dumps(profile_data))
+
+            if ok1 and ok2:
                 logger.debug(f"Conversation state saved: {state.conversation_id} ({len(state.messages)} messages)")
-                
-            except Exception as e:
-                logger.exception(f"Failed to save conversation state {state.conversation_id}: {e}")
+        except Exception as e:
+            logger.exception(f"Failed to save conversation state {state.conversation_id}: {e}")
 
     async def get_conversation_state(self, conversation_id: str) -> Optional[ConversationState]:
         """
@@ -1184,10 +1645,10 @@ Answer:"""
         
         Provides API access to conversation history for UI state restoration.
         """
-        if self.redis_client:
+        if True:  # use helpers internally; they no-op if Redis unavailable
             try:
                 cache_key = f"conversation:{conversation_id}"
-                cached_state = await self.redis_client.get(cache_key)
+                cached_state = await self._redis_get(cache_key)
                 
                 if cached_state:
                     import json
@@ -1279,74 +1740,101 @@ Answer:"""
                 "error": str(e)
             }
     
-    async def _validate_and_extract_json(self, response_text: str) -> tuple[Optional[ChatResponseJSON], List[Dict[str, Any]]]:
+    async def _enforce_json_schema(self, response_text: str, original_prompt: str):
         """
-        Validate and extract structured JSON response using strict schema validation.
+        Strengthened JSON Schema Enforcement using SchemaEnforcer utility.
         
-        Implements Friend's guidance: Strict JSON envelope + repair attempts + failure handling.
-        Ground Truth: Actionable Prioritization - ensures structured, actionable output.
-        
-        Returns:
-            (validated_json, legacy_recommendations_list) for backward compatibility
+        Process:
+        1. Extract/repair/validate using SchemaEnforcer 
+        2. If needed, re-ask via structured JSON completion
+        3. Return (validated_model_or_None, legacy_recommendations_list)
+        4. Comprehensive Prometheus metrics for observability
         """
-        import re
-        import json
-        from pydantic import ValidationError
-        
-        # Step 1: Extract JSON from fenced code block
-        json_text = self._extract_fenced_json(response_text)
-        
+        with json_enforce_ms.time():
+            # First pass using SchemaEnforcer utility
+            model, telemetry = enforce_with_retry(
+                ChatAdvisorResponse,
+                response_text,
+                original_prompt,
+            )
+
+            if model:
+                json_pass_total.inc()
+                json_validations_total.labels(result="pass").inc()  # Legacy compatibility
+                return model, self._to_legacy_recs(model)
+
+            # Need a re-ask - use structured JSON completion
+            repair_prompt = telemetry["repair_prompt"]
+            
+            try:
+                json_reask_total.inc()  # Legacy compatibility
+                
+                # Use enhanced structured JSON completion with tool calls
+                raw = await self.llm_router.complete_json_structured(
+                    repair_prompt,
+                    model_schema=ChatAdvisorResponse.model_json_schema(),
+                    max_tokens=900,
+                )
+
+                # Validate strict result using utility
+                model = validate_reask_result(ChatAdvisorResponse, raw)
+                if model:
+                    json_retry_pass_total.inc()
+                    json_validations_total.labels(result="pass").inc()  # Legacy compatibility
+                    return model, self._to_legacy_recs(model)
+                else:
+                    json_fail_total.inc()
+                    json_validations_total.labels(result="fail").inc()  # Legacy compatibility
+                    
+            except Exception as e:
+                logger.warning(f"Structured JSON re-ask failed: {e}")
+                json_fail_total.inc()
+                json_validations_total.labels(result="fail").inc()  # Legacy compatibility
+
+            # Final deterministic fallback to keep UI responsive
+            json_fallback_total.inc()  # Legacy compatibility
+            fallback = self._fallback_from_text(response_text)
+            return None, fallback
+
+    def _extract_and_validate_first_pass(self, response_text: str) -> ChatAdvisorResponse | None:
+        json_text = self._extract_fenced_json(response_text) or self._extract_loose_json(response_text)
         if not json_text:
-            logger.warning("No JSON block found in LLM response")
-            return None, self._generate_fallback_recommendations(response_text)
-        
-        # Step 2: Parse JSON with error handling
+            return None
+        # light repair
+        json_text = self._repair_json(json_text)
         try:
-            raw_json = json.loads(json_text)
-        except json.JSONDecodeError as e:
-            logger.warning(f"JSON parsing failed: {e}")
-            # Attempt simple repair
-            repaired_json = self._repair_json(json_text)
-            if repaired_json:
-                try:
-                    raw_json = json.loads(repaired_json)
-                    logger.info("JSON repair successful")
-                except json.JSONDecodeError:
-                    logger.warning("JSON repair failed")
-                    return None, self._generate_fallback_recommendations(response_text)
-            else:
-                return None, self._generate_fallback_recommendations(response_text)
-        
-        # Step 3: Validate against ChatResponseJSON schema
+            import json
+            data = json.loads(json_text)
+            return ChatAdvisorResponse.model_validate(data)
+        except Exception:
+            return None
+
+    def _parse_json_strict(self, raw: str) -> ChatAdvisorResponse | None:
         try:
-            validated_response = ChatResponseJSON.model_validate(raw_json)
-            logger.info(f"JSON validation successful: {len(validated_response.recommendations)} recommendations")
-            
-            # Convert to legacy format for backward compatibility
-            legacy_recommendations = []
-            for i, rec in enumerate(validated_response.recommendations):
-                legacy_recommendations.append({
-                    "course_code": rec.course_code,
-                    "recommendation_index": i,
-                    "priority": rec.priority,
-                    "reasoning": rec.rationale,
-                    "difficulty_warning": rec.difficulty_warning or "",
-                    "next_steps": rec.next_action,
-                    "confidence": 0.95,  # High confidence for validated responses
-                    "format": "validated_json",
-                    "validation_passed": True,
-                    "provenance": validated_response.provenance
-                })
-            
-            return validated_response, legacy_recommendations
-            
-        except ValidationError as e:
-            logger.warning(f"JSON schema validation failed: {e}")
-            # Log validation errors for debugging
-            for error in e.errors():
-                logger.warning(f"Validation error: {error['loc']} - {error['msg']}")
-            
-            return None, self._generate_fallback_recommendations(response_text)
+            import json
+            data = json.loads(raw)
+            return ChatAdvisorResponse.model_validate(data)
+        except Exception as e:
+            logger.warning(f"Strict JSON parse failed: {e}")
+            return None
+
+    def _to_legacy_recs(self, model: ChatAdvisorResponse):
+        # Preserve your existing return contract for state/metadata
+        legacy = []
+        for i, rec in enumerate(model.recommendations):
+            legacy.append({
+                "course_code": rec.course_code,
+                "recommendation_index": i,
+                "priority": rec.priority,
+                "reasoning": rec.rationale,
+                "difficulty_warning": rec.difficulty_warning or "",
+                "next_steps": rec.next_action,
+                "confidence": 0.95,
+                "format": "validated_json",
+                "validation_passed": True,
+                "provenance": model.provenance,
+            })
+        return legacy
     
     def _extract_fenced_json(self, response_text: str) -> Optional[str]:
         """Extract JSON from fenced code blocks with multiple patterns"""
@@ -1371,6 +1859,11 @@ Answer:"""
             return match.group(1).strip()
         
         return None
+
+    def _extract_loose_json(self, text: str) -> str | None:
+        import re
+        m = re.search(r'({\s*"recommendations"\s*:\s*\[.*?\]\s*[^}]*})', text, re.DOTALL)
+        return m.group(1).strip() if m else None
     
     def _repair_json(self, json_text: str) -> Optional[str]:
         """Attempt simple JSON repairs for common LLM mistakes"""
@@ -1393,45 +1886,27 @@ Answer:"""
         repaired = re.sub(r'}\s*{', '}, {', repaired)
         
         return repaired
-    
-    def _generate_fallback_recommendations(self, response_text: str) -> List[Dict[str, Any]]:
-        """
-        Generate fallback recommendations when JSON validation fails.
-        Uses regex pattern matching to extract course codes and basic reasoning.
-        """
+
+    def _fallback_from_text(self, text: str):
+        # last-resort structured fallback (keeps UI working)
         import re
-        
-        fallback_recommendations = []
-        
-        # Pattern to find course codes in text (SUBJ #### format)
-        course_pattern = r'\b([A-Z]{2,4}\s+\d{4})\b'
-        courses_found = re.findall(course_pattern, response_text)
-        
-        # Limit to first 5 unique courses
-        unique_courses = list(dict.fromkeys(courses_found))[:5]
-        
-        for i, course_code in enumerate(unique_courses):
-            # Try to extract reasoning from nearby text
-            reasoning_pattern = rf'{re.escape(course_code)}[^\n]*?([^.!?]*[.!?])'
-            reasoning_match = re.search(reasoning_pattern, response_text)
-            reasoning = reasoning_match.group(1).strip() if reasoning_match else "Mentioned in response"
-            
-            fallback_recommendations.append({
-                "course_code": course_code,
+        codes = re.findall(r'\b([A-Z]{2,4}\s\d{4})\b', text)[:3] or ["UNSPECIFIED"]
+        out = []
+        for i, code in enumerate(codes):
+            out.append({
+                "course_code": code,
                 "recommendation_index": i,
                 "priority": i + 1,
-                "reasoning": reasoning,
+                "reasoning": "Extracted from unstructured response",
                 "difficulty_warning": "",
                 "next_steps": "check_prereqs",
-                "confidence": 0.6,  # Lower confidence for fallback extraction
-                "format": "fallback_regex",
+                "confidence": 0.4,
+                "format": "fallback",
                 "validation_passed": False,
                 "provenance": []
             })
-        
-        if fallback_recommendations:
-            logger.info(f"Generated {len(fallback_recommendations)} fallback recommendations")
-        else:
-            logger.warning("No course codes found for fallback recommendations")
-        
-        return fallback_recommendations
+        return out
+
+    async def close(self):
+        if self.redis_client:
+            await self.redis_client.close()
